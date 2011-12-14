@@ -1,0 +1,4 @@
+# File used to include any patch from PlanetLab to avoid
+# modifying the spec file directly. Just include ApplyPatch()
+# directives like:
+# ApplyPatch linux-patchfile.patch
