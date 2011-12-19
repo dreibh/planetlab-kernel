@@ -92,7 +92,7 @@ srpm: sources
 	 for downloaded in $(SOURCEFILES) ; do cp ../$$downloaded . ; done ; \
 	 cat config-planetlab >> config-generic)
 	./rpmmacros.sh
-	export HOME=$(shell pwd) ; rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPMBUILDOPT) --nodeps -bs $(SPECFILE)
+	export HOME=$(shell pwd) ; rpmbuild $(RPMDIRDEFS) $(RPMDEFS) --nodeps -bs $(SPECFILE)
 
 TARGET ?= $(shell uname -m)
 rpm: sources
