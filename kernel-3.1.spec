@@ -534,9 +534,9 @@ BuildRequires: xmlto, asciidoc
 %if %{with_sparse}
 BuildRequires: sparse >= 0.4.1
 %endif
-%if %{with_tools}
-BuildRequires: elfutils-devel zlib-devel binutils-devel newt-devel python-devel perl(ExtUtils::Embed) pciutils-devel gettext
-%endif
+#%if %{with_tools}
+#BuildRequires: elfutils-devel zlib-devel binutils-devel newt-devel python-devel perl(ExtUtils::Embed) pciutils-devel gettext
+#%endif
 BuildConflicts: rhbuildsys(DiskFree) < 500Mb
 
 %define fancy_debuginfo 0
@@ -828,49 +828,49 @@ Group: Development/Debug
 This package is required by %{name}-debuginfo subpackages.
 It provides the kernel source files common to all builds.
 
-%if %{with_tools}
-%package -n kernel-tools
-Summary: Assortment of tools for the Linux kernel
-Group: Development/System
-License: GPLv2
-Obsoletes: perf
-Provides:  perf
-Provides:  cpupowerutils = 1:009-0.6.p1
-Obsoletes: cpupowerutils < 1:009-0.6.p1
-Provides:  cpufreq-utils = 1:009-0.6.p1
-Provides:  cpufrequtils = 1:009-0.6.p1
-Obsoletes: cpufreq-utils < 1:009-0.6.p1
-Obsoletes: cpufrequtils < 1:009-0.6.p1
-Obsoletes: cpuspeed < 1:1.5-16
-%description -n kernel-tools
-This package contains the tools/ directory from the kernel source
-- the perf tool and the supporting documentation.
+#%if %{with_tools}
+#%package -n kernel-tools
+#Summary: Assortment of tools for the Linux kernel
+#Group: Development/System
+#License: GPLv2
+#Obsoletes: perf
+#Provides:  perf
+#Provides:  cpupowerutils = 1:009-0.6.p1
+#Obsoletes: cpupowerutils < 1:009-0.6.p1
+#Provides:  cpufreq-utils = 1:009-0.6.p1
+#Provides:  cpufrequtils = 1:009-0.6.p1
+#Obsoletes: cpufreq-utils < 1:009-0.6.p1
+#Obsoletes: cpufrequtils < 1:009-0.6.p1
+#Obsoletes: cpuspeed < 1:1.5-16
+#%description -n kernel-tools
+#This package contains the tools/ directory from the kernel source
+#- the perf tool and the supporting documentation.
 
-%package -n kernel-tools-devel
-Summary: Assortment of tools for the Linux kernel
-Group: Development/System
-License: GPLv2
-Requires: kernel-tools = %{version}-%{release}
-Provides:  cpupowerutils-devel = 1:009-0.6.p1
-Obsoletes: cpupowerutils-devel < 1:009-0.6.p1
-%description -n kernel-tools-devel
-This package contains the development files for the tools/ directory from
-the kernel source.
+#%package -n kernel-tools-devel
+#Summary: Assortment of tools for the Linux kernel
+#Group: Development/System
+#License: GPLv2
+#Requires: kernel-tools = %{version}-%{release}
+#Provides:  cpupowerutils-devel = 1:009-0.6.p1
+#Obsoletes: cpupowerutils-devel < 1:009-0.6.p1
+#%description -n kernel-tools-devel
+#This package contains the development files for the tools/ directory from
+#the kernel source.
 
-%package -n kernel-tools-debuginfo
-Summary: Debug information for package kernel-tools
-Group: Development/Debug
-Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
-AutoReqProv: no
-%description -n kernel-tools-debuginfo
-This package provides debug information for package kernel-tools.
+#%package -n kernel-tools-debuginfo
+#Summary: Debug information for package kernel-tools
+#Group: Development/Debug
+#Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
+#AutoReqProv: no
+#%description -n kernel-tools-debuginfo
+#This package provides debug information for package kernel-tools.
 
-# Note that this pattern only works right to match the .build-id
-# symlinks because of the trailing nonmatching alternation and
-# the leading .*, because of find-debuginfo.sh's buggy handling
-# of matching the pattern against the symlinks file.
-%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/perf(\.debug)?|.*%%{_libexecdir}/perf-core/.*|.*%%{_bindir}/centrino-decode(\.debug)?|.*%%{_bindir}/powernow-k8-decode(\.debug)?|.*%%{_bindir}/cpupower(\.debug)?|.*%%{_libdir}/libcpupower.*|XXX' -o kernel-tools-debuginfo.list}
-%endif
+## Note that this pattern only works right to match the .build-id
+## symlinks because of the trailing nonmatching alternation and
+## the leading .*, because of find-debuginfo.sh's buggy handling
+## of matching the pattern against the symlinks file.
+#%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/perf(\.debug)?|.*%%{_libexecdir}/perf-core/.*|.*%%{_bindir}/centrino-decode(\.debug)?|.*%%{_bindir}/powernow-k8-decode(\.debug)?|.*%%{_bindir}/cpupower(\.debug)?|.*%%{_libdir}/libcpupower.*|XXX' -o kernel-tools-debuginfo.list}
+#%endif
 
 
 #
@@ -1737,28 +1737,28 @@ BuildKernel %make_target %kernel_image
 BuildKernel %make_target %kernel_image smp
 %endif
 
-%if %{with_tools}
-# perf
-make %{?_smp_mflags} -C tools/perf -s V=1 HAVE_CPLUS_DEMANGLE=1 prefix=%{_prefix} all
-make %{?_smp_mflags} -C tools/perf -s V=1 prefix=%{_prefix} man || %{doc_build_fail}
+#%if %{with_tools}
+## perf
+#make %{?_smp_mflags} -C tools/perf -s V=1 HAVE_CPLUS_DEMANGLE=1 prefix=%{_prefix} all
+#make %{?_smp_mflags} -C tools/perf -s V=1 prefix=%{_prefix} man || %{doc_build_fail}
 
-%ifarch %{cpupowerarchs}
-# cpupower
-# make sure version-gen.sh is executable.
-chmod +x tools/power/cpupower/utils/version-gen.sh
-make %{?_smp_mflags} -C tools/power/cpupower CPUFREQ_BENCH=false
-%ifarch %{ix86}
-    cd tools/power/cpupower/debug/i386
-    make %{?_smp_mflags} centrino-decode powernow-k8-decode
-    cd -
-%endif
-%ifarch x86_64
-    cd tools/power/cpupower/debug/x86_64
-    make %{?_smp_mflags} centrino-decode powernow-k8-decode
-    cd -
-%endif
-%endif
-%endif
+#%ifarch %{cpupowerarchs}
+## cpupower
+## make sure version-gen.sh is executable.
+#chmod +x tools/power/cpupower/utils/version-gen.sh
+#make %{?_smp_mflags} -C tools/power/cpupower CPUFREQ_BENCH=false
+#%ifarch %{ix86}
+#    cd tools/power/cpupower/debug/i386
+#    make %{?_smp_mflags} centrino-decode powernow-k8-decode
+#    cd -
+#%endif
+#%ifarch x86_64
+#    cd tools/power/cpupower/debug/x86_64
+#    make %{?_smp_mflags} centrino-decode powernow-k8-decode
+#    cd -
+#%endif
+#%endif
+#%endif
 
 %if %{with_doc}
 # Make the HTML and man pages.
@@ -1841,37 +1841,37 @@ rm -f $RPM_BUILD_ROOT/usr/include/asm*/io.h
 rm -f $RPM_BUILD_ROOT/usr/include/asm*/irq.h
 %endif
 
-%if %{with_tools}
-# perf tool binary and supporting scripts/binaries
-make -C tools/perf -s V=1 DESTDIR=$RPM_BUILD_ROOT HAVE_CPLUS_DEMANGLE=1 prefix=%{_prefix} install
+#%if %{with_tools}
+## perf tool binary and supporting scripts/binaries
+#make -C tools/perf -s V=1 DESTDIR=$RPM_BUILD_ROOT HAVE_CPLUS_DEMANGLE=1 prefix=%{_prefix} install
 
-# perf man pages (note: implicit rpm magic compresses them later)
-make -C tools/perf  -s V=1 DESTDIR=$RPM_BUILD_ROOT HAVE_CPLUS_DEMANGLE=1 prefix=%{_prefix} install-man || %{doc_build_fail}
+## perf man pages (note: implicit rpm magic compresses them later)
+#make -C tools/perf  -s V=1 DESTDIR=$RPM_BUILD_ROOT HAVE_CPLUS_DEMANGLE=1 prefix=%{_prefix} install-man || %{doc_build_fail}
 
-%ifarch %{cpupowerarchs}
-make -C tools/power/cpupower DESTDIR=$RPM_BUILD_ROOT libdir=%{_libdir} mandir=%{_mandir} CPUFREQ_BENCH=false install
-rm -f %{buildroot}%{_libdir}/*.{a,la}
-%find_lang cpupower
-mv cpupower.lang ../
-%ifarch %{ix86}
-    cd tools/power/cpupower/debug/i386
-    install -m755 centrino-decode %{buildroot}%{_bindir}/centrino-decode
-    install -m755 powernow-k8-decode %{buildroot}%{_bindir}/powernow-k8-decode
-    cd -
-%endif
-%ifarch x86_64
-    cd tools/power/cpupower/debug/x86_64
-    install -m755 centrino-decode %{buildroot}%{_bindir}/centrino-decode
-    install -m755 powernow-k8-decode %{buildroot}%{_bindir}/powernow-k8-decode
-    cd -
-%endif
-chmod 0755 %{buildroot}%{_libdir}/libcpupower.so*
-mkdir -p %{buildroot}%{_unitdir} %{buildroot}%{_sysconfdir}/sysconfig
-install -m644 %{SOURCE2000} %{buildroot}%{_unitdir}/cpupower.service
-install -m644 %{SOURCE2001} %{buildroot}%{_sysconfdir}/sysconfig/cpupower
-%endif
+#%ifarch %{cpupowerarchs}
+#make -C tools/power/cpupower DESTDIR=$RPM_BUILD_ROOT libdir=%{_libdir} mandir=%{_mandir} CPUFREQ_BENCH=false install
+#rm -f %{buildroot}%{_libdir}/*.{a,la}
+#%find_lang cpupower
+#mv cpupower.lang ../
+#%ifarch %{ix86}
+#    cd tools/power/cpupower/debug/i386
+#    install -m755 centrino-decode %{buildroot}%{_bindir}/centrino-decode
+#    install -m755 powernow-k8-decode %{buildroot}%{_bindir}/powernow-k8-decode
+#    cd -
+#%endif
+#%ifarch x86_64
+#    cd tools/power/cpupower/debug/x86_64
+#    install -m755 centrino-decode %{buildroot}%{_bindir}/centrino-decode
+#    install -m755 powernow-k8-decode %{buildroot}%{_bindir}/powernow-k8-decode
+#    cd -
+#%endif
+#chmod 0755 %{buildroot}%{_libdir}/libcpupower.so*
+#mkdir -p %{buildroot}%{_unitdir} %{buildroot}%{_sysconfdir}/sysconfig
+#install -m644 %{SOURCE2000} %{buildroot}%{_unitdir}/cpupower.service
+#install -m644 %{SOURCE2001} %{buildroot}%{_sysconfdir}/sysconfig/cpupower
+#%endif
 
-%endif
+#%endif
 
 %if %{with_firmware}
 %{build_firmware}
@@ -1893,13 +1893,13 @@ rm -rf $RPM_BUILD_ROOT
 ### scripts
 ###
 
-%if %{with_tools}
-%post -n kernel-tools
-/sbin/ldconfig
+#%if %{with_tools}
+#%post -n kernel-tools
+#/sbin/ldconfig
 
-%postun -n kernel-tools
-/sbin/ldconfig
-%endif
+#%postun -n kernel-tools
+#/sbin/ldconfig
+#%endif
 
 #
 # This macro defines a %%post script for a kernel*-devel package.
@@ -2029,37 +2029,37 @@ fi
 %{_datadir}/man/man9/*
 %endif
 
-%if %{with_tools}
-#%files -n kernel-tools -f cpupower.lang
-%defattr(-,root,root)
-%{_bindir}/perf
-%dir %{_libexecdir}/perf-core
-%{_libexecdir}/perf-core/*
-%{_mandir}/man[1-8]/*
+#%if %{with_tools}
+##%files -n kernel-tools -f cpupower.lang
+#%defattr(-,root,root)
+#%{_bindir}/perf
+#%dir %{_libexecdir}/perf-core
+#%{_libexecdir}/perf-core/*
+#%{_mandir}/man[1-8]/*
 
-%ifarch %{cpupowerarchs}
-%{_bindir}/cpupower
-%ifarch %{ix86} x86_64
-%{_bindir}/centrino-decode
-%{_bindir}/powernow-k8-decode
-%endif
-%{_libdir}/libcpupower.so.0
-%{_libdir}/libcpupower.so.0.0.0
-%{_unitdir}/cpupower.service
-%config(noreplace) %{_sysconfdir}/sysconfig/cpupower
-%endif
+#%ifarch %{cpupowerarchs}
+#%{_bindir}/cpupower
+#%ifarch %{ix86} x86_64
+#%{_bindir}/centrino-decode
+#%{_bindir}/powernow-k8-decode
+#%endif
+#%{_libdir}/libcpupower.so.0
+#%{_libdir}/libcpupower.so.0.0.0
+#%{_unitdir}/cpupower.service
+#%config(noreplace) %{_sysconfdir}/sysconfig/cpupower
+#%endif
 
-%if %{with_debuginfo}
-%files -f kernel-tools-debuginfo.list -n kernel-tools-debuginfo
-%defattr(-,root,root)
-%endif
+#%if %{with_debuginfo}
+#%files -f kernel-tools-debuginfo.list -n kernel-tools-debuginfo
+#%defattr(-,root,root)
+#%endif
 
-%ifarch %{cpupowerarchs}
-%files -n kernel-tools-devel
-%{_libdir}/libcpupower.so
-%{_includedir}/cpufreq.h
-%endif
-%endif
+#%ifarch %{cpupowerarchs}
+#%files -n kernel-tools-devel
+#%{_libdir}/libcpupower.so
+#%{_includedir}/cpufreq.h
+#%endif
+#%endif
 
 # This is %%{image_install_path} on an arch where that includes ELF files,
 # or empty otherwise.
