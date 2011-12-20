@@ -1406,7 +1406,7 @@ ApplyPatch oom-fix-integer-overflow-of-points.patch
 # END OF PATCH APPLICATIONS
 
 # BEGIN Planet-Lab Patches
-%(cat planetlab-patches.in)
+# %(cat planetlab-patches.in)
 # END OF Planet-Lab Patches
 
 %endif
@@ -2023,7 +2023,7 @@ fi
 %endif
 
 %if %{with_tools}
-%files -n kernel-tools -f cpupower.lang
+#%files -n kernel-tools -f cpupower.lang
 %defattr(-,root,root)
 %{_bindir}/perf
 %dir %{_libexecdir}/perf-core
