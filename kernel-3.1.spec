@@ -51,7 +51,7 @@ Summary: The Linux kernel
 # For non-released -rc kernels, this will be prepended with "0.", so
 # for example a 3 here will become 0.3
 #
-%global baserelease 8
+%global baserelease 7
 %global fedora_build %{baserelease}
 
 # base_sublevel is the kernel version we're starting with and patching
@@ -111,6 +111,8 @@ Summary: The Linux kernel
 %define with_doc       %{?_without_doc:       0} %{?!_without_doc:       1}
 # kernel-headers
 %define with_headers   %{?_without_headers:   0} %{?!_without_headers:   1}
+# kernel-firmware
+%define with_firmware  %{?_with_firmware:     1} %{?!_with_firmware:     0}
 # tools
 %define with_tools     %{?_without_tools:     0} %{?!_without_tools:     1}
 # kernel-debuginfo
@@ -299,6 +301,7 @@ Summary: The Linux kernel
 %define with_headers 0
 %define with_tools 0
 %define all_arch_configs kernel-%{version}-*.config
+%define with_firmware  %{?_with_firmware:     1} %{?!_with_firmware:     0}
 %endif
 
 # bootwrapper is only on ppc
@@ -442,7 +445,6 @@ Summary: The Linux kernel
 
 # Architectures we build tools/cpupower on
 %define cpupowerarchs %{ix86} x86_64 ppc ppc64
-#%define cpupowerarchs ppc ppc64
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts:
@@ -489,6 +491,11 @@ Provides: kernel-modeset = 1\
 Provides: kernel-uname-r = %{KVERREL}%{?1:.%{1}}\
 Requires(pre): %{kernel_prereq}\
 Requires(pre): %{initrd_prereq}\
+%if %{with_firmware}\
+Requires(pre): kernel-firmware >= %{rpmversion}-%{pkg_release}\
+%else\
+Requires(pre): linux-firmware >= 20100806-2\
+%endif\
 Requires(post): /sbin/new-kernel-pkg\
 Requires(preun): /sbin/new-kernel-pkg\
 Conflicts: %{kernel_dot_org_conflicts}\
@@ -1866,6 +1873,10 @@ install -m644 %{SOURCE2001} %{buildroot}%{_sysconfdir}/sysconfig/cpupower
 
 %endif
 
+%if %{with_firmware}
+%{build_firmware}
+%endif
+
 %if %{with_bootwrapper}
 make DESTDIR=$RPM_BUILD_ROOT bootwrapper_install WRAPPER_OBJDIR=%{_libdir}/kernel-wrapper WRAPPER_DTSDIR=%{_libdir}/kernel-wrapper/dts
 %endif
@@ -1979,17 +1990,6 @@ fi}\
 %kernel_variant_preun tegra
 %kernel_variant_post -v tegra
 
-pushd /boot || exit $?
-/bin/ln -sf config-%{KVERREL}%{?1:.%{1}} config || exit $?
-/bin/ln -sf config-%{KVERREL}%{?1:.%{1}} configsmp || exit $?
-/bin/ln -sf initrd-%{KVERREL}%{?1:.%{1}}.img initrd-boot || exit $?
-/bin/ln -sf initrd-%{KVERREL}%{?1:.%{1}}.img initrd-bootsmp || exit $?
-/bin/ln -sf vmlinuz-%{KVERREL}%{?1:.%{1}} kernel-boot || exit $?
-/bin/ln -sf vmlinuz-%{KVERREL}%{?1:.%{1}} kernel-bootsmp || exit $?
-popd || exit $?
-/bin/mkdir -p /etc/planetlab || exit $?
-/bin/touch /etc/planetlab/update-reboot || exit $?
-
 if [ -x /sbin/ldconfig ]
 then
     /sbin/ldconfig -X || exit $?
@@ -2003,6 +2003,13 @@ fi
 %files headers
 %defattr(-,root,root)
 /usr/include/*
+%endif
+
+%if %{with_firmware}
+%files firmware
+%defattr(-,root,root)
+/lib/firmware/*
+%doc linux-%{kversion}.%{_target_cpu}/firmware/WHENCE
 %endif
 
 %if %{with_bootwrapper}
