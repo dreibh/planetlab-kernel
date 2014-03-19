@@ -7,7 +7,7 @@ SHA1SUM	= sha1sum
 SED	= sed
 RPMBUILDOPT = --without tools --without debug --without debuginfo
 # this is passed on the command line as the full path to <build>/SPECS/kernel.spec
-SPECFILE = kernel-3.1.spec
+SPECFILE = kernel.spec
 
 # Thierry - when called from within the build, PWD is /build
 PWD=$(shell pwd)
@@ -88,7 +88,7 @@ trees: sources
 srpm: sources
 	mkdir -p SOURCES SRPMS
 	(cd SOURCES; rpm2cpio ../$(SOURCE_RPM) | cpio -diu; \
-	 cp ../$(notdir $(SPECFILE)) . ; cp ../linux-*.patch .; cp ../config-planetlab .; \
+	 cp ../$(notdir $(SPECFILE)) . ; cp ../*.patch .; cp ../config-planetlab .; \
 	 for downloaded in $(SOURCEFILES) ; do cp ../$$downloaded . ; done ; \
 	 cat config-planetlab >> config-generic)
 	./rpmmacros.sh
@@ -98,11 +98,13 @@ TARGET ?= $(shell uname -m)
 rpm: sources
 	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPMBUILDOPT) --nodeps --target $(TARGET) -bb $(SPECFILE)
 
+distclean: whipe
+
 whipe: clean
 	rm -f *.rpm
-	rm -rf kernel-3.1.fc14
+	rm -rf kernel-*
 	rm -rf x86_64
 
 clean:
-	rm -f kernel-3.1.0-8.planetlab.fc14.src.rpm
+	rm -f kernel-*.src.rpm
 	rm -rf BUILDROOT SOURCES SPECS SRPMS tmp

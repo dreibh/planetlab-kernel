@@ -2,3 +2,5 @@
 # modifying the spec file directly. Just include ApplyPatch()
 # directives like:
 # ApplyPatch linux-patchfile.patch
+
+ApplyPatch 0001-MPTCP-v0.88.patch
