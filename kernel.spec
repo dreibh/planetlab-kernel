@@ -228,7 +228,7 @@ Summary: The Linux kernel
 %define variant_fedora -fedora
 %endif
 
-%define using_upstream_branch 0
+%define using_upstream_branch 1
 %if 0%{?upstream_branch:1}
 %define stable_update 0
 %define using_upstream_branch 1
