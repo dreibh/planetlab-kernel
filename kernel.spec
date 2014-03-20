@@ -62,7 +62,7 @@ Summary: The Linux kernel
 # For non-released -rc kernels, this will be appended after the rcX and
 # gitX tags, so a 3 here would become part of release "0.rcX.gitX.3"
 #
-%global baserelease 881
+%global baserelease 882
 %global fedora_build %{baserelease}
 
 # base_sublevel is the kernel version we're starting with and patching
@@ -228,7 +228,7 @@ Summary: The Linux kernel
 %define variant_fedora -fedora
 %endif
 
-%define using_upstream_branch 1
+%define using_upstream_branch 0
 %if 0%{?upstream_branch:1}
 %define stable_update 0
 %define using_upstream_branch 1
@@ -502,7 +502,7 @@ AutoProv: yes\
 # ###### NorNet Kernel ######
 # define variant -nornet
 %define buildid .nornet
-%define nopatches 1
+# % define nopatches 1
 # ###### NorNet Kernel ######
 
 
@@ -739,9 +739,6 @@ Patch22247: ath9k_rx_dma_stop_check.patch
 #rhbz 927469
 Patch25007: fix-child-thread-introspection.patch
 
-#CVE-2013-2147 rhbz 971242 971249
-Patch25032: cve-2013-2147-ciss-info-leak.patch
-
 #rhbz 977040
 Patch25056: iwl3945-better-skb-management-in-rx-path.patch
 Patch25057: iwl4965-better-skb-management-in-rx-path.patch
@@ -749,26 +746,11 @@ Patch25057: iwl4965-better-skb-management-in-rx-path.patch
 #rhbz 963715
 Patch25077: media-cx23885-Fix-TeVii-S471-regression-since-introduction-of-ts2020.patch
 
-#CVE-2013-4343 rhbz 1007733 1007741
-Patch25101: tuntap-correctly-handle-error-in-tun_set_iff.patch
-
-#CVE-2013-4350 rhbz 1007872 1007903
-Patch25102: net-sctp-fix-ipv6-ipsec-encryption-bug-in-sctp_v6_xmit.patch
-
-#CVE-2013-4345 rhbz 1007690 1009136
-Patch25104: ansi_cprng-Fix-off-by-one-error-in-non-block-size-request.patch
-
 #rhbz 971893
 Patch25106: bonding-driver-alb-learning.patch
 
 #rhbz 985522
 Patch25107: ntp-Make-periodic-RTC-update-more-reliable.patch
-
-#rhbz 1010431
-Patch25108: Revert-rt2x00pci-Use-PCI-MSIs-whenever-possible.patch
-
-#rhbz 1008323
-Patch25120: skge-fix-invalid-value-passed-to-pci_unmap_sigle.patch
 
 #rhbz 902012
 Patch25114: elevator-Fix-a-race-in-elevator-switching-and-md.patch
@@ -777,20 +759,11 @@ Patch25115: elevator-acquire-q-sysfs_lock-in-elevator_change.patch
 #rhbz 974072
 Patch25117: rt2800-add-support-for-rf3070.patch
 
-#rhbz 1005567
-Patch25118: bonding-driver-promisc.patch
-
-#CVE-2013-4387 rhbz 1011927 1015166
-Patch25121: ipv6-udp-packets-following-an-UFO-enqueued-packet-ne.patch
-
 #rhbz 1015989
 Patch25122: netfilter-nf_conntrack-use-RCU-safe-kfree-for-conntr.patch
 
 #rhbz 982153
 Patch25123: iommu-Remove-stack-trace-from-broken-irq-remapping-warning.patch
-
-#rhbz 1015920
-Patch25124: drm-nouveau-bios-init-stub-opcode-0xaa.patch
 
 #rhbz 998732
 Patch25125: vfio-iommu-Fixed-interaction-of-VFIO_IOMMU_MAP_DMA.patch
@@ -801,6 +774,64 @@ Patch25127: 0002-iwlwifi-don-t-WARN-on-bad-firmware-state.patch
 
 #rhbz 993744
 Patch25128: dm-cache-policy-mq_fix-large-scale-table-allocation-bug.patch
+
+#rhbz 1000439
+Patch25129: cpupower-Fix-segfault-due-to-incorrect-getopt_long-a.patch
+
+#rhbz 1010679
+Patch25130: fix-radeon-sound.patch
+Patch25149: drm-radeon-24hz-audio-fixes.patch
+
+#rhbz 984696
+Patch25132: rt2800usb-slow-down-TX-status-polling.patch
+
+#rhbz 1023413
+Patch25135: alps-Support-for-Dell-XT2-model.patch
+
+#rhbz 1011621
+Patch25137: cifs-Allow-LANMAN-auth-for-unencapsulated-auth-methods.patch
+
+#rhbz 1025769
+Patch25142: iwlwifi-dvm-dont-override-mac80211-queue-setting.patch
+
+Patch25143: drm-qxl-backport-fixes-for-Fedora.patch
+Patch25160: drm-qxl-fix-memory-leak-in-release-list-handling.patch
+
+Patch25144: Input-evdev-fall-back-to-vmalloc-for-client-event-buffer.patch
+
+#CVE-2013-4563 rhbz 1030015 1030017
+Patch25145: ipv6-fix-headroom-calculation-in-udp6_ufo_fragment.patch
+
+#rhbz 1015905
+Patch25146: 0001-ip6_output-fragment-outgoing-reassembled-skb-properl.patch
+Patch25147: 0002-netfilter-push-reasm-skb-through-instead-of-original.patch
+
+#rhbz 1011362
+Patch25148: alx-Reset-phy-speed-after-resume.patch
+
+#rhbz 1031086
+Patch25150: slab_common-Do-not-check-for-duplicate-slab-names.patch
+
+#rhbz 967652
+Patch25151: KVM-x86-fix-emulation-of-movzbl-bpl-eax.patch
+
+# Fix 15sec NFS mount delay
+Patch25152: sunrpc-create-a-new-dummy-pipe-for-gssd-to-hold-open.patch
+Patch25153: sunrpc-replace-gssd_running-with-more-reliable-check.patch
+Patch25154: nfs-check-gssd-running-before-krb5i-auth.patch
+
+#CVE-2013-6382 rhbz 1033603 1034670
+Patch25157: xfs-underflow-bug-in-xfs_attrlist_by_handle.patch
+
+#rhbz 1022733
+Patch25158: via-velocity-fix-netif_receive_skb-use-in-irq-disable.patch
+
+#rhbz 998342
+Patch25159: usbnet-fix-status-interrupt-urb-handling.patch
+
+#CVE-2013-6405 rhbz 1035875 1035887
+Patch25161: inet-prevent-leakage-of-uninitialized-memory-to-user.patch
+Patch25162: inet-fix-addr_len-msg_namelen-assignment-in-recv_error-and-rxpmtu-functions.patch
 
 # END OF PATCH DEFINITIONS
 
@@ -1290,12 +1321,12 @@ cp -rl vanilla-%{vanillaversion} linux-%{KVERREL}
 cd linux-%{KVERREL}
 
 # released_kernel with possible stable updates
-# %if 0%{?stable_base}
-# ApplyPatch %{stable_patch_00}
-# %endif
-# %if 0%{?stable_rc}
-# ApplyPatch %{stable_patch_01}
-# %endif
+%if 0%{?stable_base}
+ApplyPatch %{stable_patch_00}
+%endif
+%if 0%{?stable_rc}
+ApplyPatch %{stable_patch_01}
+%endif
 
 %if %{using_upstream_branch}
 ### BRANCH APPLY ###
@@ -1326,7 +1357,7 @@ done
 
 # ###### NorNet Kernel ######
 ApplyPatch 0001-MPTCP-v0.88.patch
-# ###### NorNet Kernel ######
+# ###### NorNet Kernel ######  
 
 ApplyPatch makefile-after_link.patch
 
@@ -1469,9 +1500,6 @@ ApplyPatch ath9k_rx_dma_stop_check.patch
 #rhbz 927469
 ApplyPatch fix-child-thread-introspection.patch
 
-#CVE-2013-2147 rhbz 971242 971249
-ApplyPatch cve-2013-2147-ciss-info-leak.patch
-
 #rhbz 977040
 ApplyPatch iwl3945-better-skb-management-in-rx-path.patch
 ApplyPatch iwl4965-better-skb-management-in-rx-path.patch
@@ -1479,26 +1507,11 @@ ApplyPatch iwl4965-better-skb-management-in-rx-path.patch
 #rhbz 963715
 ApplyPatch media-cx23885-Fix-TeVii-S471-regression-since-introduction-of-ts2020.patch
 
-#CVE-2013-4343 rhbz 1007733 1007741
-ApplyPatch tuntap-correctly-handle-error-in-tun_set_iff.patch
-
-#CVE-2013-4350 rhbz 1007872 1007903
-ApplyPatch net-sctp-fix-ipv6-ipsec-encryption-bug-in-sctp_v6_xmit.patch
-
-#CVE-2013-4345 rhbz 1007690 1009136
-ApplyPatch ansi_cprng-Fix-off-by-one-error-in-non-block-size-request.patch
-
 #rhbz 985522
 ApplyPatch ntp-Make-periodic-RTC-update-more-reliable.patch
 
-#rhbz 1010431
-ApplyPatch Revert-rt2x00pci-Use-PCI-MSIs-whenever-possible.patch
-
 #rhbz 971893
 ApplyPatch bonding-driver-alb-learning.patch
-
-#rhbz 1008323
-ApplyPatch skge-fix-invalid-value-passed-to-pci_unmap_sigle.patch
 
 #rhbz 902012
 ApplyPatch elevator-Fix-a-race-in-elevator-switching-and-md.patch
@@ -1507,20 +1520,11 @@ ApplyPatch elevator-acquire-q-sysfs_lock-in-elevator_change.patch
 #rhbz 974072
 ApplyPatch rt2800-add-support-for-rf3070.patch
 
-#rhbz 1005567
-ApplyPatch bonding-driver-promisc.patch
-
-#CVE-2013-4387 rhbz 1011927 1015166
-ApplyPatch ipv6-udp-packets-following-an-UFO-enqueued-packet-ne.patch
-
 #rhbz 1015989
 ApplyPatch netfilter-nf_conntrack-use-RCU-safe-kfree-for-conntr.patch
 
 #rhbz 982153
 ApplyPatch iommu-Remove-stack-trace-from-broken-irq-remapping-warning.patch
-
-#rhbz 1015920
-ApplyPatch drm-nouveau-bios-init-stub-opcode-0xaa.patch
 
 #rhbz 998732
 ApplyPatch vfio-iommu-Fixed-interaction-of-VFIO_IOMMU_MAP_DMA.patch
@@ -1531,6 +1535,64 @@ ApplyPatch 0002-iwlwifi-don-t-WARN-on-bad-firmware-state.patch
 
 #rhbz 993744
 ApplyPatch dm-cache-policy-mq_fix-large-scale-table-allocation-bug.patch
+
+#rhbz 1000439
+ApplyPatch cpupower-Fix-segfault-due-to-incorrect-getopt_long-a.patch
+
+#rhbz 1010679
+ApplyPatch fix-radeon-sound.patch
+ApplyPatch drm-radeon-24hz-audio-fixes.patch
+
+#rhbz 984696
+ApplyPatch rt2800usb-slow-down-TX-status-polling.patch
+
+#rhbz 1023413
+ApplyPatch alps-Support-for-Dell-XT2-model.patch
+
+#rhbz 1011621
+ApplyPatch cifs-Allow-LANMAN-auth-for-unencapsulated-auth-methods.patch
+
+#rhbz 1025769
+ApplyPatch iwlwifi-dvm-dont-override-mac80211-queue-setting.patch
+
+ApplyPatch drm-qxl-backport-fixes-for-Fedora.patch
+ApplyPatch drm-qxl-fix-memory-leak-in-release-list-handling.patch
+
+ApplyPatch Input-evdev-fall-back-to-vmalloc-for-client-event-buffer.patch
+
+#CVE-2013-4563 rhbz 1030015 1030017
+ApplyPatch ipv6-fix-headroom-calculation-in-udp6_ufo_fragment.patch
+
+#rhbz 1015905
+ApplyPatch 0001-ip6_output-fragment-outgoing-reassembled-skb-properl.patch
+ApplyPatch 0002-netfilter-push-reasm-skb-through-instead-of-original.patch
+
+#rhbz 1011362
+ApplyPatch alx-Reset-phy-speed-after-resume.patch
+
+#rhbz 1031086
+ApplyPatch slab_common-Do-not-check-for-duplicate-slab-names.patch
+
+#rhbz 967652
+ApplyPatch KVM-x86-fix-emulation-of-movzbl-bpl-eax.patch
+
+# Fix 15sec NFS mount delay
+ApplyPatch sunrpc-create-a-new-dummy-pipe-for-gssd-to-hold-open.patch
+ApplyPatch sunrpc-replace-gssd_running-with-more-reliable-check.patch
+ApplyPatch nfs-check-gssd-running-before-krb5i-auth.patch
+
+#CVE-2013-6382 rhbz 1033603 1034670
+ApplyPatch xfs-underflow-bug-in-xfs_attrlist_by_handle.patch
+
+#rhbz 1022733
+ApplyPatch via-velocity-fix-netif_receive_skb-use-in-irq-disable.patch
+
+#rhbz 998342
+ApplyPatch usbnet-fix-status-interrupt-urb-handling.patch
+
+#CVE-2013-6405 rhbz 1035875 1035887
+ApplyPatch inet-prevent-leakage-of-uninitialized-memory-to-user.patch
+ApplyPatch inet-fix-addr_len-msg_namelen-assignment-in-recv_error-and-rxpmtu-functions.patch
 
 # END OF PATCH APPLICATIONS
 
@@ -2373,6 +2435,90 @@ fi
 #                 ||----w |
 #                 ||     ||
 %changelog
+* Sat Nov 30 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2013-6405 net: leak of uninited mem to userspace via recv syscalls (rhbz 1035875 1035887)
+
+* Fri Nov 29 2013 Josh Boyer <jwboyer@fedoraproject.org> - 3.11.10-100
+- Linux v3.11.10
+- Fix memory leak in qxl (from Dave Airlie)
+
+* Tue Nov 26 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- Add patch to fix usbnet URB handling (rhbz 998342)
+- Fix crash in via-velocity driver (rhbz 1022733)
+- CVE-2013-6382 xfs: missing check for ZERO_SIZE_PTR (rhbz 1033603 1034670)
+
+* Mon Nov 25 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2013-6380 aacraid: invalid pointer dereference (rhbz 1033593 1034304)
+- CVE-2013-6378 libertas: potential oops in debugfs (rhbz 1033578 1034183)
+
+* Fri Nov 22 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- Add patches from Jeff Layton to fix 15sec NFS mount hang
+
+* Wed Nov 20 2013 Josh Boyer <jwboyer@fedoraproject.org> - 3.11.9-100
+- Linux v3.11.9
+
+* Mon Nov 18 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- Add patch to fix rhel5.9 KVM guests (rhbz 967652)
+- Add patch to fix crash from slab when using md-raid mirrors (rhbz 1031086)
+- Add patches from Pierre Ossman to fix 24Hz/24p radeon audio (rhbz 1010679)
+- Add patch to fix ALX phy issues after resume (rhbz 1011362)
+- Fix ipv6 sit panic with packet size > mtu (from Michele Baldessari) (rbhz 1015905)
+
+* Thu Nov 14 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2013-4563: net: large udp packet over IPv6 over UFO-enabled device with TBF qdisc panic (rhbz 1030015 1030017)
+
+* Wed Nov 13 2013 Justin M. Forbes <jforbes@fedoraproject.org> - 3.11.8-100
+- Linux v3.11.8
+
+* Sat Nov 09 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- Add patch from Daniel Stone to avoid high order allocations in evdev
+- Add qxl backport fixes from Dave Airlie
+
+* Mon Nov 04 2013 Josh Boyer <jwboyer@fedoraproject.org> - 3.11.7-100
+- Add patch to fix iwlwifi queue settings backtrace (rhbz 1025769)
+
+* Mon Nov 04 2013 Justin M. Forbes <jforbes@fedoraproject.org>
+- Linux v3.11.7
+
+* Fri Nov 01 2013 Josh Boyer <jwboyer@fedoraproject.org> - 3.11.6-101
+- Revert blocking patches causing systemd to crash on resume (rhbz 1010603)
+- CVE-2013-4348 net: deadloop path in skb_flow_dissect (rhbz 1007939 1025647)
+
+* Thu Oct 31 2013 Josh Boyer <jwboyer@fedoraprorject.org>
+- Fix display regression on Dell XPS 13 machines (rhbz 995782)
+
+* Tue Oct 29 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix plaintext auth regression in cifs (rhbz 1011621)
+
+* Fri Oct 25 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2013-4470 net: memory corruption with UDP_CORK and UFO (rhbz 1023477 1023495)
+- Add touchpad support for Dell XT2 (rhbz 1023413)
+
+* Tue Oct 22 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- Add patch to fix warning in tcp_fastretrans_alert (rhbz 989251)
+
+* Fri Oct 18 2013 Justin M. Forbes <jforbes@fedoraproject.org> - 3.11.6-100
+- Linux v3.11.6
+
+* Thu Oct 17 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- Add patch to fix BusLogic error (rhbz 1015558)
+- Fix rt2800usb polling timeouts and throughput issues (rhbz 984696)
+
+* Wed Oct 16 2013 Josh Boyer <jwboyer@fedoraproject.org> 
+- Fix btrfs balance/scrub issue (rhbz 1011714)
+
+* Tue Oct 15 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix regression in radeon sound (rhbz 1010679)
+
+* Mon Oct 14 2013 Kyle McMartin <kyle@redhat.com>
+- Fix crash-driver.patch to properly use page_is_ram. 
+
+* Mon Oct 14 2013 Justin M. Forbes <jforbes@fedoraproject.org> - 3.11.5-100
+- Linux v3.11.5
+
+* Fri Oct 11 2013 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix segfault in cpupower set (rhbz 1000439)
+
 * Thu Oct 10 2013 Justin M. Forbes <jforbes@fedoraproject.org> - 3.11.4-101
 - Fix linux-firmware requirement
 
