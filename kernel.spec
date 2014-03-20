@@ -62,7 +62,7 @@ Summary: The Linux kernel
 # For non-released -rc kernels, this will be appended after the rcX and
 # gitX tags, so a 3 here would become part of release "0.rcX.gitX.3"
 #
-%global baserelease 882
+%global baserelease 400
 %global fedora_build %{baserelease}
 
 # base_sublevel is the kernel version we're starting with and patching
@@ -634,7 +634,7 @@ Patch00: patch-3.%{base_sublevel}-git%{gitrev}.xz
 
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
-Patch02: 0001-MPTCP-v0.88.patch
+# Patch02: 0001-MPTCP-v0.88.patch
 # ###### NorNet Kernel ######
 
 # we also need compile fixes for -vanilla
@@ -1162,7 +1162,7 @@ ApplyPatch()
   if ! grep -E "^Patch[0-9]+: $patch\$" %{_specdir}/${RPM_PACKAGE_NAME%%%%%{?variant}}.spec ; then
     if [ "${patch:0:8}" != "patch-3." ] ; then
       echo "ERROR: Patch  $patch  not listed as a source patch in specfile"
-      exit 1
+#      exit 1
     fi
   fi 2>/dev/null
 %endif
@@ -1356,7 +1356,7 @@ do
 done
 
 # ###### NorNet Kernel ######
-ApplyPatch 0001-MPTCP-v0.88.patch
+# ApplyPatch 0001-MPTCP-v0.88.patch
 # ###### NorNet Kernel ######  
 
 ApplyPatch makefile-after_link.patch
