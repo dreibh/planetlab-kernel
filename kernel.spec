@@ -1160,7 +1160,7 @@ ApplyPatch()
   fi
 %if !%{using_upstream_branch}
   if ! grep -E "^Patch[0-9]+: $patch\$" %{_specdir}/${RPM_PACKAGE_NAME%%%%%{?variant}}.spec ; then
-    if [ "${patch:0:8}" != "patch-3." ] ; then
+    if ! echo "$patch" | grep -E "^patch-3\." ; then
       echo "ERROR: Patch  $patch  not listed as a source patch in specfile"
       exit 1
     fi
