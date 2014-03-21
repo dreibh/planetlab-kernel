@@ -5,8 +5,11 @@ CLIENT	?= $(if $(CURL),$(CURL),$(if $(WGET),$(WGET)))
 AWK	= awk
 SHA1SUM	= sha1sum
 SED	= sed
+
+# TD 21.03.2014: Using "--with baseonly" to avoid building all the special variants.
 RPMBUILDOPT = --with baseonly --without tools --without debug --without debuginfo
 # this is passed on the command line as the full path to <build>/SPECS/kernel.spec
+
 SPECFILE = kernel.spec
 
 # Thierry - when called from within the build, PWD is /build
@@ -75,8 +78,18 @@ new-sources: download-sources
 		$(SHA1SUM) $${i##*/} | $(AWK) '{ printf "%s  %s\n", $$1, "'"$$i"'" }' >> sources; \
 	done
 
+# TD 21.03.2014: Needs to define _specdir. Otherwise, the spec file is not found.
+#                This triggers "patch  xxxxx  not listed as a source patch in specfile",
+#                since the specfile cannot be opened by "grep".
+# TD 21.03.2014: The spec file relies on "bash" for regexp and "[[". Set it by _buildshell.
 PREPARCH ?= noarch
-RPMDIRDEFS = --define "_sourcedir $(PWD)/SOURCES" --define "_builddir $(PWD)" --define "_srcrpmdir $(PWD)" --define "_rpmdir $(PWD)"
+RPMDIRDEFS = \
+   --define "_specdir $(PWD)" \
+   --define "_sourcedir $(PWD)/SOURCES" \
+   --define "_builddir $(PWD)" \
+   --define "_srcrpmdir $(PWD)" \
+   --define "_rpmdir $(PWD)" \
+   --define "_buildshell /bin/bash"
 trees: sources
 	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPMBUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
 
