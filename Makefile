@@ -108,7 +108,7 @@ srpm: sources
 	export HOME=$(shell pwd) ; rpmbuild $(RPMDIRDEFS) $(RPMDEFS) --nodeps -bs $(SPECFILE)
 
 TARGET ?= $(shell uname -m)
-rpm: sources
+rpm: srpm
 	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPMBUILDOPT) --nodeps --target $(TARGET) -bb $(SPECFILE)
 
 distclean: whipe
