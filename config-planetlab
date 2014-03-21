@@ -1,4 +1,17 @@
-#CONFIG_CHOPSTIX=y
-#CONFIG_NETFILTER_XT_TARGET_SETXID=m
-#CONFIG_ICMP_IPOD=y
-#CONFIG_OOM_PANIC=y
+# This file is intentionally left empty in the stock kernel. Its a nicety
+# added for those wanting to do custom rebuilds with altered config opts.
+
+# ###### NorNet Kernel ######
+CONFIG_SYN_COOKIES=n
+CONFIG_TCP_MD5SIG=n
+
+CONFIG_TCP_CONG_COUPLED=m
+CONFIG_TCP_CONG_OLIA=m
+
+CONFIG_MPTCP=y
+CONFIG_MPTCP_PM_ADVANCED=y
+CONFIG_MPTCP_FULLMESH=m
+CONFIG_MPTCP_NDIFFPORTS=m
+CONFIG_DEFAULT_DUMMY=y
+CONFIG_DEFAULT_MPTCP_PM="default"
+# ###### NorNet Kernel ######
