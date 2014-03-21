@@ -5,7 +5,7 @@ CLIENT	?= $(if $(CURL),$(CURL),$(if $(WGET),$(WGET)))
 AWK	= awk
 SHA1SUM	= sha1sum
 SED	= sed
-RPMBUILDOPT = --without tools --without debug --without debuginfo
+RPMBUILDOPT = --with baseonly --without tools --without debug --without debuginfo
 # this is passed on the command line as the full path to <build>/SPECS/kernel.spec
 SPECFILE = kernel.spec
 
