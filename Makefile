@@ -5,9 +5,12 @@ CLIENT	?= $(if $(CURL),$(CURL),$(if $(WGET),$(WGET)))
 AWK	= awk
 SHA1SUM	= sha1sum
 SED	= sed
-RPMBUILDOPT = --without tools --without debug --without debuginfo
+
+# TD 21.03.2014: Using "--with baseonly" to avoid building all the special variants.
+RPMBUILDOPT = --with baseonly --without tools --without debug --without debuginfo
 # this is passed on the command line as the full path to <build>/SPECS/kernel.spec
-SPECFILE = kernel-3.1.spec
+
+SPECFILE = kernel.spec
 
 # Thierry - when called from within the build, PWD is /build
 PWD=$(shell pwd)
@@ -75,8 +78,18 @@ new-sources: download-sources
 		$(SHA1SUM) $${i##*/} | $(AWK) '{ printf "%s  %s\n", $$1, "'"$$i"'" }' >> sources; \
 	done
 
+# TD 21.03.2014: Needs to define _specdir. Otherwise, the spec file is not found.
+#                This triggers "patch  xxxxx  not listed as a source patch in specfile",
+#                since the specfile cannot be opened by "grep".
+# TD 21.03.2014: The spec file relies on "bash" for regexp and "[[". Set it by _buildshell.
 PREPARCH ?= noarch
-RPMDIRDEFS = --define "_sourcedir $(PWD)/SOURCES" --define "_builddir $(PWD)" --define "_srcrpmdir $(PWD)" --define "_rpmdir $(PWD)"
+RPMDIRDEFS = \
+   --define "_specdir $(PWD)" \
+   --define "_sourcedir $(PWD)/SOURCES" \
+   --define "_builddir $(PWD)" \
+   --define "_srcrpmdir $(PWD)" \
+   --define "_rpmdir $(PWD)" \
+   --define "_buildshell /bin/bash"
 trees: sources
 	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPMBUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
 
@@ -88,21 +101,23 @@ trees: sources
 srpm: sources
 	mkdir -p SOURCES SRPMS
 	(cd SOURCES; rpm2cpio ../$(SOURCE_RPM) | cpio -diu; \
-	 cp ../$(notdir $(SPECFILE)) . ; cp ../linux-*.patch .; cp ../config-planetlab .; \
+	 cp ../$(notdir $(SPECFILE)) . ; cp ../*.patch .; cp ../config-planetlab .; \
 	 for downloaded in $(SOURCEFILES) ; do cp ../$$downloaded . ; done ; \
 	 cat config-planetlab >> config-generic)
 	./rpmmacros.sh
 	export HOME=$(shell pwd) ; rpmbuild $(RPMDIRDEFS) $(RPMDEFS) --nodeps -bs $(SPECFILE)
 
 TARGET ?= $(shell uname -m)
-rpm: sources
+rpm: srpm
 	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPMBUILDOPT) --nodeps --target $(TARGET) -bb $(SPECFILE)
+
+distclean: whipe
 
 whipe: clean
 	rm -f *.rpm
-	rm -rf kernel-3.1.fc14
+	rm -rf kernel-*
 	rm -rf x86_64
 
 clean:
-	rm -f kernel-3.1.0-8.planetlab.fc14.src.rpm
+	rm -f kernel-*.src.rpm
 	rm -rf BUILDROOT SOURCES SPECS SRPMS tmp
