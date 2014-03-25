@@ -7,7 +7,8 @@ SHA1SUM	= sha1sum
 SED	= sed
 
 # TD 21.03.2014: Using "--with baseonly" to avoid building all the special variants.
-RPMBUILDOPT = --with baseonly --without tools --without debug --without debuginfo
+RPM_ARCH_BUILDOPT   = --with baseonly --without tools --without debug --without debuginfo
+RPM_NOARCH_BUILDOPT = --without tools --without debug --without debuginfo
 # this is passed on the command line as the full path to <build>/SPECS/kernel.spec
 
 SPECFILE = kernel.spec
@@ -91,14 +92,14 @@ RPMDIRDEFS = \
    --define "_rpmdir $(PWD)" \
    --define "_buildshell /bin/bash"
 trees: sources
-	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPMBUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
+	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
 
 # use the stock source rpm, unwrap it,
 # copy the downloaded material
 # install our own specfile and patched patches
-# and patch configs for IPV6
+# and patch configs
 # then rewrap with rpm
-srpm: sources
+srpm: trees
 	mkdir -p SOURCES SRPMS
 	(cd SOURCES; rpm2cpio ../$(SOURCE_RPM) | cpio -diu; \
 	 cp ../$(notdir $(SPECFILE)) . ; cp ../*.patch .; cp ../config-planetlab .; \
@@ -109,7 +110,10 @@ srpm: sources
 
 TARGET ?= $(shell uname -m)
 rpm: srpm
-	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPMBUILDOPT) --nodeps --target $(TARGET) -bb $(SPECFILE)
+	# 25.03.2014: Call rpmbuild for noarch. This generates the kernel-docs package.
+	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps --target $(PREPARCH) -bb $(SPECFILE)
+	# Now, run the build for the architecture-specific packages.
+	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_ARCH_BUILDOPT) --nodeps --target $(TARGET) -bb $(SPECFILE)
 
 distclean: whipe
 
