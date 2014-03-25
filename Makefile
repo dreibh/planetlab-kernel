@@ -91,15 +91,13 @@ RPMDIRDEFS = \
    --define "_srcrpmdir $(PWD)" \
    --define "_rpmdir $(PWD)" \
    --define "_buildshell /bin/bash"
-trees: sources
-	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
 
 # use the stock source rpm, unwrap it,
 # copy the downloaded material
 # install our own specfile and patched patches
 # and patch configs
 # then rewrap with rpm
-srpm: trees
+srpm: sources
 	mkdir -p SOURCES SRPMS
 	(cd SOURCES; rpm2cpio ../$(SOURCE_RPM) | cpio -diu; \
 	 cp ../$(notdir $(SPECFILE)) . ; cp ../*.patch .; cp ../config-planetlab .; \
@@ -107,6 +105,7 @@ srpm: trees
 	 cat config-planetlab >> config-generic)
 	./rpmmacros.sh
 	export HOME=$(shell pwd) ; rpmbuild $(RPMDIRDEFS) $(RPMDEFS) --nodeps -bs $(SPECFILE)
+	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
 
 TARGET ?= $(shell uname -m)
 rpm: srpm
