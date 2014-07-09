@@ -2197,21 +2197,21 @@ index 1ec407b..d30e03a 100644
  		IFF_MASTER|IFF_SLAVE|IFF_RUNNING|IFF_LOWER_UP|IFF_DORMANT)
  
 diff --git a/include/uapi/linux/tcp.h b/include/uapi/linux/tcp.h
-index 8d776eb..1ee97af 100644
+index 8d776eb..fb59504 100644
 --- a/include/uapi/linux/tcp.h
 +++ b/include/uapi/linux/tcp.h
 @@ -111,6 +111,14 @@ enum {
  #define TCP_REPAIR_OPTIONS	22
  #define TCP_FASTOPEN		23	/* Enable FastOpen on listeners */
  #define TCP_TIMESTAMP		24
-+#define TCP_MULTIPATH_DEBUG	25	/* MPTCP DEBUG on/off */
-+#define TCP_MULTIPATH_ENABLED	26	/* MPTCP DISABLED on/off */
-+#define TCP_MULTIPATH_ADD       27
-+#define TCP_MULTIPATH_REMOVE    28
-+#define TCP_MULTIPATH_SUBFLOWS  29
-+#define TCP_MULTIPATH_CONNID    30
-+#define TCP_MULTIPATH_NDIFFPORTS	31	/* MPTCP NDIFFPORTS */
-+#define TCP_MULTIPATH_PATHMANAGER	32	/* MPTCP PATHMANAGER */
++#define TCP_MULTIPATH_DEBUG	10001	/* MPTCP DEBUG on/off */
++#define TCP_MULTIPATH_ENABLE	10002	/* MPTCP DISABLED on/off */
++#define TCP_MULTIPATH_ADD       10003
++#define TCP_MULTIPATH_REMOVE    10004
++#define TCP_MULTIPATH_SUBFLOWS  10005
++#define TCP_MULTIPATH_CONNID    10006
++#define TCP_MULTIPATH_NDIFFPORTS	10007	/* MPTCP NDIFFPORTS */
++#define TCP_MULTIPATH_PATHMANAGER	10008	/* MPTCP PATHMANAGER */
  
  struct tcp_repair_opt {
  	__u32	opt_code;
@@ -2571,7 +2571,7 @@ index b05c96e..10312ab 100644
  	ireq->rcv_wscale  = rcv_wscale;
  
 diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
-index ec586e5..d48a57b 100644
+index ec586e5..b1fe5b3 100644
 --- a/net/ipv4/tcp.c
 +++ b/net/ipv4/tcp.c
 @@ -271,6 +271,7 @@
@@ -2889,7 +2889,7 @@ index ec586e5..d48a57b 100644
 +		else
 +			tp->debug_on = val;
 +		break;
-+	case TCP_MULTIPATH_ENABLED:
++	case TCP_MULTIPATH_ENABLE:
 +		if (val < 0 || val > 1)
 +			err = -EINVAL;
 +		else
@@ -2913,7 +2913,7 @@ index ec586e5..d48a57b 100644
 +	case TCP_MULTIPATH_DEBUG:
 +		val = tp->debug_on;
 +		break;
-+	case TCP_MULTIPATH_ENABLED:
++	case TCP_MULTIPATH_ENABLE:
 +		val = (tp->mptcp_disabled == 0);
 +		break;
 +	case TCP_MULTIPATH_NDIFFPORTS:
