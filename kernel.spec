@@ -459,6 +459,9 @@ Summary: The Linux kernel
 # It uses any kernel_<subpackage>_conflicts and kernel_<subpackage>_obsoletes
 # macros defined above.
 #
+# ###### NorNet Kernel ######
+# NOTE: Removed dependency on linux-firmware!
+# ###### NorNet Kernel ######
 %define kernel_reqprovconf \
 Provides: kernel = %{rpmversion}-%{pkg_release}\
 Provides: kernel-%{_target_cpu} = %{rpmversion}-%{pkg_release}%{?1:.%{1}}\
@@ -475,7 +478,6 @@ Provides: kernel-tegra-uname-r = %{KVERREL}%{?1:.%{1}}\
 Provides: kernel-omap\
 Requires(pre): %{kernel_prereq}\
 Requires(pre): %{initrd_prereq}\
-Requires(pre): linux-firmware >= 20130724-29.git31f6b30\
 Requires(post): /sbin/new-kernel-pkg\
 Requires(preun): /sbin/new-kernel-pkg\
 Conflicts: %{kernel_dot_org_conflicts}\
@@ -489,6 +491,7 @@ Conflicts: %{package_conflicts}\
 AutoReq: no\
 AutoProv: yes\
 %{nil}
+
 
 
 # ###### NorNet Kernel ######
