@@ -74,7 +74,7 @@ Summary: The Linux kernel
 %if 0%{?released_kernel}
 
 # Do we have a -stable update to apply?
-%define stable_update 23
+%define stable_update 27
 # Is it a -stable RC?
 %define stable_rc 0
 # Set rpm version accordingly
@@ -753,34 +753,11 @@ Patch25109: revert-input-wacom-testing-result-shows-get_report-is-unnecessary.pa
 Patch25110: 0001-ideapad-laptop-Blacklist-rfkill-control-on-the-Lenov.patch
 Patch25111: 0002-ideapad-laptop-Change-Lenovo-Yoga-2-series-rfkill-ha.patch
 
-#CVE-2014-7970 rhbz 1151095 1151484
-Patch26032: mnt-Prevent-pivot_root-from-creating-a-loop-in-the-m.patch
-
 # CVE-2014-3690 rhbz 1153322 1155372
 Patch26060: x86-kvm-vmx-Preserve-CR4-across-VM-entry.patch
 
-#CVE-2014-3688 rhbz 1155745 1155751
-Patch26061: net-sctp-fix-skb_over_panic-when-receiving-malformed.patch
-
-#CVE-2014-3687 rhbz 1155731 1155738
-Patch26062: net-sctp-fix-panic-on-duplicate-ASCONF-chunks.patch
-
-#CVE-2014-3673 rhbz 1147850 1155727
-Patch26063: net-sctp-fix-remote-memory-pressure-from-excessive-q.patch
-
-# CVE-2014-3610 kvm: noncanonical MSR writes (rhbz 1144883 1156543)
-# CVE-2014-3611 kvm: PIT timer race condition (rhbz 1144878 1156537)
-# CVE-2014-3646 kvm: vmx: invvpid vm exit not handled (rhbz 1144825 1156534)
-# CVE-2014-8369 kvm: excessive pages un-pinning in kvm_iommu_map error path (rhbz 1156518 1156522)
-Patch26070: KVM-x86-Check-non-canonical-addresses-upon-WRMSR.patch
-Patch26071: KVM-x86-Prevent-host-from-panicking-on-shared-MSR-wr.patch
-Patch26072: KVM-x86-Improve-thread-safety-in-pit.patch
-Patch26073: KVM-x86-Fix-wrong-masking-on-relative-jump-call.patch
-Patch26074: KVM-x86-Emulator-fixes-for-eip-canonical-checks-on-n.patch
-Patch26075: KVM-x86-Handle-errors-when-RIP-is-set-during-far-jum.patch
-Patch26076: kvm-vmx-handle-invvpid-vm-exit-gracefully.patch
-Patch26077: kvm-x86-don-t-kill-guest-on-unknown-exit-reason.patch
-Patch26082: kvm-fix-excessive-pages-un-pinning-in-kvm_iommu_map-.patch
+#CVE-2014-8134 rhbz 1172765 1172769
+Patch26091: x86-kvm-Clear-paravirt_enabled-on-KVM-guests-for-esp.patch
 
 # END OF PATCH DEFINITIONS
 
@@ -1477,34 +1454,11 @@ ApplyPatch revert-input-wacom-testing-result-shows-get_report-is-unnecessary.pat
 ApplyPatch 0001-ideapad-laptop-Blacklist-rfkill-control-on-the-Lenov.patch
 ApplyPatch 0002-ideapad-laptop-Change-Lenovo-Yoga-2-series-rfkill-ha.patch
 
-#CVE-2014-7970 rhbz 1151095 1151484
-ApplyPatch mnt-Prevent-pivot_root-from-creating-a-loop-in-the-m.patch
-
 # CVE-2014-3690 rhbz 1153322 1155372
 ApplyPatch x86-kvm-vmx-Preserve-CR4-across-VM-entry.patch
 
-#CVE-2014-3688 rhbz 1155745 1155751
-ApplyPatch net-sctp-fix-skb_over_panic-when-receiving-malformed.patch
-
-#CVE-2014-3687 rhbz 1155731 1155738
-ApplyPatch net-sctp-fix-panic-on-duplicate-ASCONF-chunks.patch
-
-#CVE-2014-3673 rhbz 1147850 1155727
-ApplyPatch net-sctp-fix-remote-memory-pressure-from-excessive-q.patch
-
-# CVE-2014-3610 kvm: noncanonical MSR writes (rhbz 1144883 1156543)
-# CVE-2014-3611 kvm: PIT timer race condition (rhbz 1144878 1156537)
-# CVE-2014-3646 kvm: vmx: invvpid vm exit not handled (rhbz 1144825 1156534)
-# CVE-2014-8369 kvm: excessive pages un-pinning in kvm_iommu_map error path (rhbz 1156518 1156522)
-ApplyPatch KVM-x86-Check-non-canonical-addresses-upon-WRMSR.patch
-ApplyPatch KVM-x86-Prevent-host-from-panicking-on-shared-MSR-wr.patch
-ApplyPatch KVM-x86-Improve-thread-safety-in-pit.patch
-ApplyPatch KVM-x86-Fix-wrong-masking-on-relative-jump-call.patch
-ApplyPatch KVM-x86-Emulator-fixes-for-eip-canonical-checks-on-n.patch
-ApplyPatch KVM-x86-Handle-errors-when-RIP-is-set-during-far-jum.patch
-ApplyPatch kvm-vmx-handle-invvpid-vm-exit-gracefully.patch
-ApplyPatch kvm-x86-don-t-kill-guest-on-unknown-exit-reason.patch
-ApplyPatch kvm-fix-excessive-pages-un-pinning-in-kvm_iommu_map-.patch
+#CVE-2014-8134 rhbz 1172765 1172769
+ApplyPatch x86-kvm-Clear-paravirt_enabled-on-KVM-guests-for-esp.patch
 
 # END OF PATCH APPLICATIONS
 
@@ -2318,6 +2272,33 @@ fi
 # and build.
 
 %changelog
+* Wed Dec 17 2014 Justin M. Forbes <jforbes@fedoraproject.org> - 3.14.27-100
+- Linux v3.14.27
+
+* Wed Dec 10 2014 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2014-8134 fix espfix for 32-bit KVM paravirt guests (rhbz 1172765 1172769)
+
+* Mon Dec 08 2014 Justin M. Forbes <jforbes@fedoraproject.org> - 3.14.26-100
+- Linux v3.14.26
+
+* Thu Dec 04 2014 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2014-9090 local DoS via do_double_fault due to improper SS faults (rhbz 1170691)
+
+* Fri Nov 21 2014 Justin M. Forbes <jforbes@fedoraproject.org> - 3.14.25-100
+- Linux v3.14.25
+
+* Fri Nov 14 2014 Justin M. Forbes <jforbes@fedoraproject.org> - 3.14.24-100
+- Linux v3.14.24
+
+* Thu Nov 13 2014 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2014-7842 kvm: reporting emulation failures to userspace (rhbz 1163762 1163767)
+
+* Wed Nov 12 2014 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2014-7841 sctp: NULL ptr deref on malformed packet (rhbz 1163087 1163095)
+
+* Fri Nov 07 2014 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2014-7826 CVE-2014-7825 insufficient syscall number validation in perf and ftrace subsystems (rhbz 1161565 1161572)
+
 * Thu Oct 30 2014 Justin M. Forbes <jforbes@fedoraproject.org> - 3.14.23-100
 - Linux v3.14.23
 
