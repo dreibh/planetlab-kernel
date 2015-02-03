@@ -625,7 +625,7 @@ Patch00: patch-3.%{base_sublevel}-git%{gitrev}.xz
 
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
-Patch02: 0001-MPTCP-0.89.3-with-socketoptions.patch
+Patch02: 0001-MPTCP-0.89.4-with-socketoptions.patch
 # ###### NorNet Kernel ######
 
 # we also need compile fixes for -vanilla
