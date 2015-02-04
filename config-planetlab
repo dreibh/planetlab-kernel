@@ -4,17 +4,12 @@
 # ###### NorNet Kernel ######################################################
 
 # ====== System ===========================================
-CONFIG_HZ_1000=y
-CONFIG_HZ=1000
 # CONFIG_CC_STACKPROTECTOR_STRONG is not supported by F18's gcc
 CONFIG_CC_STACKPROTECTOR_STRONG=
 CONFIG_CC_STACKPROTECTOR_REGULAR=y
 
 # ====== MPTCP ============================================
-CONFIG_SYN_COOKIES=n
-CONFIG_TCP_MD5SIG=n
-
-CONFIG_TCP_CONG_COUPLED=m
+CONFIG_TCP_CONG_LIA=m
 CONFIG_TCP_CONG_OLIA=m
 CONFIG_TCP_CONG_WVEGAS=m
 
@@ -23,15 +18,9 @@ CONFIG_MPTCP_PM_ADVANCED=y
 CONFIG_MPTCP_FULLMESH=m
 CONFIG_MPTCP_NDIFFPORTS=m
 CONFIG_MPTCP_BINDER=m
-CONFIG_DEFAULT_DUMMY=y
 CONFIG_DEFAULT_MPTCP_PM="default"
 CONFIG_MPTCP_SCHED_ADVANCED=y
 CONFIG_MPTCP_ROUNDROBIN=m
-CONFIG_DEFAULT_SCHEDULER=y
 CONFIG_DEFAULT_MPTCP_SCHED="default"
 
-# ====== DCCP =============================================
-CONFIG_IP_DCCP_CCID3=y
-CONFIG_IP_DCCP_TFRC_LIB=y
-
-# ###### NorNet Kernel ######
+# ###### NorNet Kernel ######################################################
