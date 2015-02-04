@@ -1299,6 +1299,10 @@ do
   rm $i.tmp
 done
 
+# ###### NorNet Kernel ######
+ApplyPatch 0001-MPTCP-0.89.4-with-socketoptions.patch
+# ###### NorNet Kernel ######
+
 ApplyPatch makefile-after_link.patch
 
 #
