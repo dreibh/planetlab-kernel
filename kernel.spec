@@ -62,7 +62,7 @@ Summary: The Linux kernel
 # For non-released -rc kernels, this will be appended after the rcX and
 # gitX tags, so a 3 here would become part of release "0.rcX.gitX.3"
 #
-%global baserelease 8805
+%global baserelease 8806
 %global fedora_build %{baserelease}
 
 # base_sublevel is the kernel version we're starting with and patching
@@ -626,6 +626,7 @@ Patch00: patch-3.%{base_sublevel}-git%{gitrev}.xz
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
 Patch02: 0001-MPTCP-0.89.4-with-socketoptions.patch
+Patch03: 0001-Add-Balia-Congestion-Control-Module.patch
 # ###### NorNet Kernel ######
 
 # we also need compile fixes for -vanilla
@@ -1301,6 +1302,7 @@ done
 
 # ###### NorNet Kernel ######
 ApplyPatch 0001-MPTCP-0.89.4-with-socketoptions.patch
+ApplyPatch 0001-Add-Balia-Congestion-Control-Module.patch
 # ###### NorNet Kernel ######
 
 ApplyPatch makefile-after_link.patch

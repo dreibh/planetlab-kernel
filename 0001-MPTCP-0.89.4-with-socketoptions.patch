@@ -180,7 +180,7 @@ index ad8f859..6b65df4 100644
  void nf_conntrack_destroy(struct nf_conntrack *nfct);
  static inline void nf_conntrack_put(struct nf_conntrack *nfct)
 diff --git a/include/linux/tcp.h b/include/linux/tcp.h
-index 4ad0706..baafe5b 100644
+index 4ad0706..40ab658 100644
 --- a/include/linux/tcp.h
 +++ b/include/linux/tcp.h
 @@ -72,6 +72,51 @@ struct tcp_sack_block {
@@ -256,16 +256,19 @@ index 4ad0706..baafe5b 100644
  	struct sock			*listener; /* needed for TFO */
  	u32				rcv_isn;
  	u32				snt_isn;
-@@ -130,6 +175,8 @@ static inline struct tcp_request_sock *tcp_rsk(const struct request_sock *req)
+@@ -130,6 +175,11 @@ static inline struct tcp_request_sock *tcp_rsk(const struct request_sock *req)
  	return (struct tcp_request_sock *)req;
  }
  
 +struct tcp_md5sig_key;
 +
++// forward declaration
++struct mptcp_pm_ops;
++
  struct tcp_sock {
  	/* inet_connection_sock has to be the first member of tcp_sock */
  	struct inet_connection_sock	inet_conn;
-@@ -323,6 +370,57 @@ struct tcp_sock {
+@@ -323,6 +373,60 @@ struct tcp_sock {
  	 * socket. Used to retransmit SYNACKs etc.
  	 */
  	struct request_sock *fastopen_rsk;
@@ -297,6 +300,9 @@ index 4ad0706..baafe5b 100644
 +	u32		mptcp_loc_token;
 +	u64		mptcp_loc_key;
 +#endif /* CONFIG_MPTCP */
++	int		ndiffports;
++	int		debug_on;
++	struct mptcp_pm_ops *mptcp_pm;
 +
 +	/* Functions that depend on the value of the mpc flag */
 +	u32 (*__select_window)(struct sock *sk);
@@ -323,7 +329,7 @@ index 4ad0706..baafe5b 100644
  };
  
  enum tsq_flags {
-@@ -334,6 +432,8 @@ enum tsq_flags {
+@@ -334,6 +438,8 @@ enum tsq_flags {
  	TCP_MTU_REDUCED_DEFERRED,  /* tcp_v{4|6}_err() could not call
  				    * tcp_v{4|6}_mtu_reduced()
  				    */
@@ -332,7 +338,7 @@ index 4ad0706..baafe5b 100644
  };
  
  static inline struct tcp_sock *tcp_sk(const struct sock *sk)
-@@ -352,6 +452,7 @@ struct tcp_timewait_sock {
+@@ -352,6 +458,7 @@ struct tcp_timewait_sock {
  #ifdef CONFIG_TCP_MD5SIG
  	struct tcp_md5sig_key	  *tw_md5_key;
  #endif
@@ -340,7 +346,7 @@ index 4ad0706..baafe5b 100644
  };
  
  static inline struct tcp_timewait_sock *tcp_twsk(const struct sock *sk)
-@@ -365,11 +466,6 @@ static inline bool tcp_passive_fastopen(const struct sock *sk)
+@@ -365,11 +472,6 @@ static inline bool tcp_passive_fastopen(const struct sock *sk)
  		tcp_sk(sk)->fastopen_rsk != NULL);
  }
  
@@ -492,10 +498,10 @@ index 2e74c6c..bfb6757 100644
  
 diff --git a/include/net/mptcp.h b/include/net/mptcp.h
 new file mode 100644
-index 0000000..940dc2e
+index 0000000..6f226b4
 --- /dev/null
 +++ b/include/net/mptcp.h
-@@ -0,0 +1,1523 @@
+@@ -0,0 +1,1533 @@
 +/*
 + *	MPTCP implementation
 + *
@@ -1176,6 +1182,16 @@ index 0000000..940dc2e
 +
 +extern struct workqueue_struct *mptcp_wq;
 +
++/* sfo */
++#define mptcp_debug2(mpcb, fmt, args...)				\
++	do {								\
++		struct sock *meta_sk = mpcb ? mpcb->meta_sk : NULL;	\
++		struct tcp_sock *meta_tp = tcp_sk(meta_sk);		\
++		u8 debug_on = meta_tp ? meta_tp->debug_on : 0;		\
++		if (unlikely(sysctl_mptcp_debug || debug_on)) 		\
++			pr_err(__FILE__ ": " fmt, ##args);	\
++	} while (0)
++
 +#define mptcp_debug(fmt, args...)					\
 +	do {								\
 +		if (unlikely(sysctl_mptcp_debug))			\
@@ -1349,7 +1365,7 @@ index 0000000..940dc2e
 +/* MPTCP-path-manager registration/initialization functions */
 +int mptcp_register_path_manager(struct mptcp_pm_ops *pm);
 +void mptcp_unregister_path_manager(struct mptcp_pm_ops *pm);
-+void mptcp_init_path_manager(struct mptcp_cb *mpcb);
++void mptcp_init_path_manager(struct mptcp_cb *mpcb, struct tcp_sock *meta_tp);
 +void mptcp_cleanup_path_manager(struct mptcp_cb *mpcb);
 +void mptcp_fallback_default(struct mptcp_cb *mpcb);
 +void mptcp_get_default_path_manager(char *name);
@@ -2702,14 +2718,23 @@ index bbaba22..df40137 100644
  };
  
 diff --git a/include/uapi/linux/tcp.h b/include/uapi/linux/tcp.h
-index 377f1e5..2ffcb03 100644
+index 377f1e5..b943156 100644
 --- a/include/uapi/linux/tcp.h
 +++ b/include/uapi/linux/tcp.h
-@@ -112,6 +112,7 @@ enum {
+@@ -112,6 +112,16 @@ enum {
  #define TCP_FASTOPEN		23	/* Enable FastOpen on listeners */
  #define TCP_TIMESTAMP		24
  #define TCP_NOTSENT_LOWAT	25	/* limit number of unsent bytes in write queue */
 +#define MPTCP_ENABLED		26
++
++#define TCP_MULTIPATH_DEBUG			10001				/* MPTCP DEBUG on/off */
++#define TCP_MULTIPATH_ENABLE			MPTCP_ENABLED	/* MPTCP DISABLED on/off */
++#define TCP_MULTIPATH_ADD				10003	/* not yet implemented */
++#define TCP_MULTIPATH_REMOVE			10004	/* not yet implemented */
++#define TCP_MULTIPATH_SUBFLOWS		10005	/* not yet implemented */
++#define TCP_MULTIPATH_CONNID			10006	/* not yet implemented */
++#define TCP_MULTIPATH_NDIFFPORTS		10007	/* MPTCP NDIFFPORTS */
++#define TCP_MULTIPATH_PATHMANAGER	10008	/* MPTCP PATHMANAGER */
  
  struct tcp_repair_opt {
  	__u32	opt_code;
@@ -3209,7 +3234,7 @@ index f2ed13c..51f882d 100644
  	ireq->rcv_wscale  = rcv_wscale;
  
 diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
-index 29d240b..f971269 100644
+index 29d240b..4951dc9 100644
 --- a/net/ipv4/tcp.c
 +++ b/net/ipv4/tcp.c
 @@ -271,6 +271,7 @@
@@ -3527,7 +3552,47 @@ index 29d240b..f971269 100644
  	sk->sk_shutdown = 0;
  	sock_reset_flag(sk, SOCK_DONE);
  	tp->srtt = 0;
-@@ -2632,6 +2699,12 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+@@ -2428,6 +2495,8 @@ static int tcp_repair_options_est(struct tcp_sock *tp,
+ 	return 0;
+ }
+ 
++struct mptcp_pm_ops *mptcp_pm_find(const char *name);
++
+ /*
+  *	Socket option code for TCP.
+  */
+@@ -2458,6 +2527,30 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+ 		release_sock(sk);
+ 		return err;
+ 	}
++	case TCP_MULTIPATH_PATHMANAGER: {
++		char name[MPTCP_PM_NAME_MAX];
++
++		if (optlen < 1)
++			return -EINVAL;
++
++		val = strncpy_from_user(name, optval,
++					min_t(long, MPTCP_PM_NAME_MAX-1, optlen));
++		if (val < 0)
++			return -EFAULT;
++		name[val] = 0;
++
++		lock_sock(sk);
++		tp->mptcp_pm = mptcp_pm_find(name);
++		release_sock(sk);
++
++		if (!tp->mptcp_pm)
++			return -EFAULT;
++		return 0;
++	}
++	case TCP_MULTIPATH_ADD:
++	case TCP_MULTIPATH_REMOVE:
++		/* Implement Me! */
++		return -EOPNOTSUPP;
+ 	default:
+ 		/* fallthru */
+ 		break;
+@@ -2632,6 +2725,12 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
  		break;
  
  	case TCP_DEFER_ACCEPT:
@@ -3540,7 +3605,7 @@ index 29d240b..f971269 100644
  		/* Translate value in seconds to number of retransmits */
  		icsk->icsk_accept_queue.rskq_defer_accept =
  			secs_to_retrans(val, TCP_TIMEOUT_INIT / HZ,
-@@ -2659,7 +2732,7 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+@@ -2659,7 +2758,7 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
  			    (TCPF_ESTABLISHED | TCPF_CLOSE_WAIT) &&
  			    inet_csk_ack_scheduled(sk)) {
  				icsk->icsk_ack.pending |= ICSK_ACK_PUSHED;
@@ -3549,12 +3614,13 @@ index 29d240b..f971269 100644
  				if (!(val & 1))
  					icsk->icsk_ack.pingpong = 1;
  			}
-@@ -2699,6 +2772,18 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+@@ -2699,6 +2798,31 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
  		tp->notsent_lowat = val;
  		sk->sk_write_space(sk);
  		break;
 +#ifdef CONFIG_MPTCP
 +	case MPTCP_ENABLED:
++	case 10002:   /* !!! FIXME: compatibility to old patch !!! */
 +		if (sk->sk_state == TCP_CLOSE || sk->sk_state == TCP_LISTEN) {
 +			if (val)
 +				tp->mptcp_enabled = 1;
@@ -3564,11 +3630,23 @@ index 29d240b..f971269 100644
 +			err = -EPERM;
 +		}
 +		break;
++	case TCP_MULTIPATH_DEBUG:
++		if (val)
++			tp->debug_on = 1;
++		else
++			tp->debug_on = 0;
++		break;
++	case TCP_MULTIPATH_NDIFFPORTS:
++		if (val < 0)
++			err = -EINVAL;
++		else
++			tp->ndiffports = val;
++		break;		
 +#endif
  	default:
  		err = -ENOPROTOOPT;
  		break;
-@@ -2918,6 +3003,11 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
+@@ -2918,8 +3042,33 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
  	case TCP_NOTSENT_LOWAT:
  		val = tp->notsent_lowat;
  		break;
@@ -3578,9 +3656,32 @@ index 29d240b..f971269 100644
 +		break;
 +#endif
  	default:
- 		return -ENOPROTOOPT;
+-		return -ENOPROTOOPT;
++
++	case TCP_MULTIPATH_DEBUG:
++		val = tp->debug_on;
++		break;
++	case TCP_MULTIPATH_NDIFFPORTS:
++		val = tp->ndiffports;
++		break;
++	case TCP_MULTIPATH_SUBFLOWS:
++	case TCP_MULTIPATH_CONNID:
++		/* Implement Me! */
++		return -EOPNOTSUPP;
++
++	case TCP_MULTIPATH_PATHMANAGER:
++		if (get_user(len, optlen))
++			return -EFAULT;
++		len = min_t(unsigned int, len, MPTCP_PM_NAME_MAX);
++		if (put_user(len, optlen))
++			return -EFAULT;
++		if (copy_to_user(optval, tp->mptcp_pm->name, len))
++			return -EFAULT;
++		return 0;
  	}
-@@ -3088,8 +3178,11 @@ void tcp_done(struct sock *sk)
+ 
+ 	if (put_user(len, optlen))
+@@ -3088,8 +3237,11 @@ void tcp_done(struct sock *sk)
  	if (sk->sk_state == TCP_SYN_SENT || sk->sk_state == TCP_SYN_RECV)
  		TCP_INC_STATS_BH(sock_net(sk), TCP_MIB_ATTEMPTFAILS);
  
@@ -6066,7 +6167,7 @@ index 7a436c5..178d986 100644
  	return ret;
  }
 diff --git a/net/ipv4/tcp_output.c b/net/ipv4/tcp_output.c
-index 91b98e5..f146145 100644
+index 91b98e5..03ecd06 100644
 --- a/net/ipv4/tcp_output.c
 +++ b/net/ipv4/tcp_output.c
 @@ -36,6 +36,12 @@
@@ -6726,7 +6827,7 @@ index 91b98e5..f146145 100644
  	tcp_clear_retrans(tp);
 +
 +#ifdef CONFIG_MPTCP
-+	if (sysctl_mptcp_enabled && mptcp_doit(sk)) {
++	if (sysctl_mptcp_enabled && tp->mptcp_enabled && mptcp_doit(sk)) {
 +		if (is_master_tp(tp)) {
 +			tp->request_mptcp = 1;
 +			mptcp_connect_init(sk);
@@ -9072,7 +9173,7 @@ index 0000000..ab4477e
 +MODULE_VERSION("0.1");
 diff --git a/net/mptcp/mptcp_ctrl.c b/net/mptcp/mptcp_ctrl.c
 new file mode 100644
-index 0000000..79e6777
+index 0000000..4601a60
 --- /dev/null
 +++ b/net/mptcp/mptcp_ctrl.c
 @@ -0,0 +1,2507 @@
@@ -10280,7 +10381,7 @@ index 0000000..79e6777
 +	/* The meta is directly linked - set refcnt to 1 */
 +	atomic_set(&mpcb->mpcb_refcnt, 1);
 +
-+	mptcp_init_path_manager(mpcb);
++	mptcp_init_path_manager(mpcb, meta_tp);
 +	mptcp_init_scheduler(mpcb);
 +
 +	setup_timer(&mpcb->synack_timer, mptcp_synack_timer_handler,
@@ -13240,10 +13341,10 @@ index 0000000..1d88b97
 +MODULE_VERSION("0.88");
 diff --git a/net/mptcp/mptcp_input.c b/net/mptcp/mptcp_input.c
 new file mode 100644
-index 0000000..53d1de2
+index 0000000..4dc9613
 --- /dev/null
 +++ b/net/mptcp/mptcp_input.c
-@@ -0,0 +1,2296 @@
+@@ -0,0 +1,2298 @@
 +/*
 + *	MPTCP implementation - Sending side
 + *
@@ -14816,6 +14917,8 @@ index 0000000..53d1de2
 +	case MPTCP_SUB_CAPABLE:
 +	{
 +		struct mp_capable *mpcapable = (struct mp_capable *)ptr;
++		struct sock *sk = skb ? skb->sk : NULL;
++		struct tcp_sock *tp = tcp_sk(sk);
 +
 +		if (opsize != MPTCP_SUB_LEN_CAPABLE_SYN &&
 +		    opsize != MPTCP_SUB_LEN_CAPABLE_ACK) {
@@ -14824,7 +14927,7 @@ index 0000000..53d1de2
 +			break;
 +		}
 +
-+		if (!sysctl_mptcp_enabled)
++		if (!sysctl_mptcp_enabled || (tp && !tp->mptcp_enabled))
 +			break;
 +
 +		/* We only support MPTCP version 0 */
@@ -16801,10 +16904,10 @@ index 0000000..14ccd1f
 +}
 diff --git a/net/mptcp/mptcp_ndiffports.c b/net/mptcp/mptcp_ndiffports.c
 new file mode 100644
-index 0000000..cc1c784
+index 0000000..6e924cb
 --- /dev/null
 +++ b/net/mptcp/mptcp_ndiffports.c
-@@ -0,0 +1,161 @@
+@@ -0,0 +1,167 @@
 +#include <linux/module.h>
 +
 +#include <net/mptcp.h>
@@ -16839,7 +16942,9 @@ index 0000000..cc1c784
 +						     subflow_work);
 +	struct mptcp_cb *mpcb = pm_priv->mpcb;
 +	struct sock *meta_sk = mpcb->meta_sk;
++	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
 +	int iter = 0;
++	int ndiffports;
 +
 +next_subflow:
 +	if (iter) {
@@ -16860,7 +16965,11 @@ index 0000000..cc1c784
 +	    !tcp_sk(mpcb->master_sk)->mptcp->fully_established)
 +		goto exit;
 +
-+	if (num_subflows > iter && num_subflows > mpcb->cnt_subflows) {
++	ndiffports = num_subflows;
++	if (meta_tp->ndiffports > 0)
++		ndiffports = meta_tp->ndiffports;
++
++	if (ndiffports > iter && ndiffports > mpcb->cnt_subflows) {
 +		if (meta_sk->sk_family == AF_INET ||
 +		    mptcp_v6_is_v4_mapped(meta_sk)) {
 +			struct mptcp_loc4 loc;
@@ -19260,10 +19369,10 @@ index 0000000..9fd49f8
 +}
 diff --git a/net/mptcp/mptcp_pm.c b/net/mptcp/mptcp_pm.c
 new file mode 100644
-index 0000000..9542f95
+index 0000000..b3dcf8c
 --- /dev/null
 +++ b/net/mptcp/mptcp_pm.c
-@@ -0,0 +1,169 @@
+@@ -0,0 +1,177 @@
 +/*
 + *     MPTCP implementation - MPTCP-subflow-management
 + *
@@ -19312,7 +19421,7 @@ index 0000000..9542f95
 +	.owner = THIS_MODULE,
 +};
 +
-+static struct mptcp_pm_ops *mptcp_pm_find(const char *name)
++struct mptcp_pm_ops *mptcp_pm_find(const char *name)
 +{
 +	struct mptcp_pm_ops *e;
 +
@@ -19393,9 +19502,17 @@ index 0000000..9542f95
 +	return ret;
 +}
 +
-+void mptcp_init_path_manager(struct mptcp_cb *mpcb)
++void mptcp_init_path_manager(struct mptcp_cb *mpcb, struct tcp_sock *meta_tp)
 +{
 +	struct mptcp_pm_ops *pm;
++
++	if (meta_tp->mptcp_pm) {
++		pm = meta_tp->mptcp_pm;
++		if (try_module_get(pm->owner)) {
++			mpcb->pm_ops = pm;
++			return;
++		}
++	}
 +
 +	rcu_read_lock();
 +	list_for_each_entry_rcu(pm, &mptcp_pm_list, list) {
