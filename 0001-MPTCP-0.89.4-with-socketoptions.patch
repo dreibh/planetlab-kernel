@@ -180,7 +180,7 @@ index ad8f859..6b65df4 100644
  void nf_conntrack_destroy(struct nf_conntrack *nfct);
  static inline void nf_conntrack_put(struct nf_conntrack *nfct)
 diff --git a/include/linux/tcp.h b/include/linux/tcp.h
-index 4ad0706..40ab658 100644
+index 4ad0706..27d39a7 100644
 --- a/include/linux/tcp.h
 +++ b/include/linux/tcp.h
 @@ -72,6 +72,51 @@ struct tcp_sack_block {
@@ -268,7 +268,7 @@ index 4ad0706..40ab658 100644
  struct tcp_sock {
  	/* inet_connection_sock has to be the first member of tcp_sock */
  	struct inet_connection_sock	inet_conn;
-@@ -323,6 +373,60 @@ struct tcp_sock {
+@@ -323,6 +373,61 @@ struct tcp_sock {
  	 * socket. Used to retransmit SYNACKs etc.
  	 */
  	struct request_sock *fastopen_rsk;
@@ -303,6 +303,7 @@ index 4ad0706..40ab658 100644
 +	int		ndiffports;
 +	int		debug_on;
 +	struct mptcp_pm_ops *mptcp_pm;
++	struct mptcp_sched_ops *mptcp_sched;
 +
 +	/* Functions that depend on the value of the mpc flag */
 +	u32 (*__select_window)(struct sock *sk);
@@ -329,7 +330,7 @@ index 4ad0706..40ab658 100644
  };
  
  enum tsq_flags {
-@@ -334,6 +438,8 @@ enum tsq_flags {
+@@ -334,6 +439,8 @@ enum tsq_flags {
  	TCP_MTU_REDUCED_DEFERRED,  /* tcp_v{4|6}_err() could not call
  				    * tcp_v{4|6}_mtu_reduced()
  				    */
@@ -338,7 +339,7 @@ index 4ad0706..40ab658 100644
  };
  
  static inline struct tcp_sock *tcp_sk(const struct sock *sk)
-@@ -352,6 +458,7 @@ struct tcp_timewait_sock {
+@@ -352,6 +459,7 @@ struct tcp_timewait_sock {
  #ifdef CONFIG_TCP_MD5SIG
  	struct tcp_md5sig_key	  *tw_md5_key;
  #endif
@@ -346,7 +347,7 @@ index 4ad0706..40ab658 100644
  };
  
  static inline struct tcp_timewait_sock *tcp_twsk(const struct sock *sk)
-@@ -365,11 +472,6 @@ static inline bool tcp_passive_fastopen(const struct sock *sk)
+@@ -365,11 +473,6 @@ static inline bool tcp_passive_fastopen(const struct sock *sk)
  		tcp_sk(sk)->fastopen_rsk != NULL);
  }
  
@@ -498,7 +499,7 @@ index 2e74c6c..bfb6757 100644
  
 diff --git a/include/net/mptcp.h b/include/net/mptcp.h
 new file mode 100644
-index 0000000..6f226b4
+index 0000000..5962671
 --- /dev/null
 +++ b/include/net/mptcp.h
 @@ -0,0 +1,1533 @@
@@ -1375,7 +1376,7 @@ index 0000000..6f226b4
 +/* MPTCP-scheduler registration/initialization functions */
 +int mptcp_register_scheduler(struct mptcp_sched_ops *sched);
 +void mptcp_unregister_scheduler(struct mptcp_sched_ops *sched);
-+void mptcp_init_scheduler(struct mptcp_cb *mpcb);
++void mptcp_init_scheduler(struct mptcp_cb *mpcb, struct tcp_sock *meta_tp);
 +void mptcp_cleanup_scheduler(struct mptcp_cb *mpcb);
 +void mptcp_get_default_scheduler(char *name);
 +int mptcp_set_default_scheduler(const char *name);
@@ -2718,10 +2719,10 @@ index bbaba22..df40137 100644
  };
  
 diff --git a/include/uapi/linux/tcp.h b/include/uapi/linux/tcp.h
-index 377f1e5..b943156 100644
+index 377f1e5..fd4cf3c 100644
 --- a/include/uapi/linux/tcp.h
 +++ b/include/uapi/linux/tcp.h
-@@ -112,6 +112,16 @@ enum {
+@@ -112,6 +112,17 @@ enum {
  #define TCP_FASTOPEN		23	/* Enable FastOpen on listeners */
  #define TCP_TIMESTAMP		24
  #define TCP_NOTSENT_LOWAT	25	/* limit number of unsent bytes in write queue */
@@ -2735,6 +2736,7 @@ index 377f1e5..b943156 100644
 +#define TCP_MULTIPATH_CONNID			10006	/* not yet implemented */
 +#define TCP_MULTIPATH_NDIFFPORTS		10007	/* MPTCP NDIFFPORTS */
 +#define TCP_MULTIPATH_PATHMANAGER	10008	/* MPTCP PATHMANAGER */
++#define TCP_MULTIPATH_SCHEDULER		10009	/* MPTCP SCHEDULER */
  
  struct tcp_repair_opt {
  	__u32	opt_code;
@@ -3234,7 +3236,7 @@ index f2ed13c..51f882d 100644
  	ireq->rcv_wscale  = rcv_wscale;
  
 diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
-index 29d240b..4951dc9 100644
+index 29d240b..6986d39 100644
 --- a/net/ipv4/tcp.c
 +++ b/net/ipv4/tcp.c
 @@ -271,6 +271,7 @@
@@ -3552,16 +3554,17 @@ index 29d240b..4951dc9 100644
  	sk->sk_shutdown = 0;
  	sock_reset_flag(sk, SOCK_DONE);
  	tp->srtt = 0;
-@@ -2428,6 +2495,8 @@ static int tcp_repair_options_est(struct tcp_sock *tp,
+@@ -2428,6 +2495,9 @@ static int tcp_repair_options_est(struct tcp_sock *tp,
  	return 0;
  }
  
 +struct mptcp_pm_ops *mptcp_pm_find(const char *name);
++struct mptcp_sched_ops *mptcp_sched_find(const char *name);
 +
  /*
   *	Socket option code for TCP.
   */
-@@ -2458,6 +2527,30 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+@@ -2458,6 +2528,50 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
  		release_sock(sk);
  		return err;
  	}
@@ -3585,6 +3588,26 @@ index 29d240b..4951dc9 100644
 +			return -EFAULT;
 +		return 0;
 +	}
++	case TCP_MULTIPATH_SCHEDULER: {
++		char name[MPTCP_SCHED_NAME_MAX];
++
++		if (optlen < 1)
++			return -EINVAL;
++
++		val = strncpy_from_user(name, optval,
++					min_t(long, MPTCP_SCHED_NAME_MAX-1, optlen));
++		if (val < 0)
++			return -EFAULT;
++		name[val] = 0;
++
++		lock_sock(sk);
++		tp->mptcp_sched = mptcp_sched_find(name);
++		release_sock(sk);
++
++		if (!tp->mptcp_sched)
++			return -EFAULT;
++		return 0;
++	}
 +	case TCP_MULTIPATH_ADD:
 +	case TCP_MULTIPATH_REMOVE:
 +		/* Implement Me! */
@@ -3592,7 +3615,7 @@ index 29d240b..4951dc9 100644
  	default:
  		/* fallthru */
  		break;
-@@ -2632,6 +2725,12 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+@@ -2632,6 +2746,12 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
  		break;
  
  	case TCP_DEFER_ACCEPT:
@@ -3605,7 +3628,7 @@ index 29d240b..4951dc9 100644
  		/* Translate value in seconds to number of retransmits */
  		icsk->icsk_accept_queue.rskq_defer_accept =
  			secs_to_retrans(val, TCP_TIMEOUT_INIT / HZ,
-@@ -2659,7 +2758,7 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+@@ -2659,7 +2779,7 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
  			    (TCPF_ESTABLISHED | TCPF_CLOSE_WAIT) &&
  			    inet_csk_ack_scheduled(sk)) {
  				icsk->icsk_ack.pending |= ICSK_ACK_PUSHED;
@@ -3614,7 +3637,7 @@ index 29d240b..4951dc9 100644
  				if (!(val & 1))
  					icsk->icsk_ack.pingpong = 1;
  			}
-@@ -2699,6 +2798,31 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+@@ -2699,6 +2819,31 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
  		tp->notsent_lowat = val;
  		sk->sk_write_space(sk);
  		break;
@@ -3646,7 +3669,7 @@ index 29d240b..4951dc9 100644
  	default:
  		err = -ENOPROTOOPT;
  		break;
-@@ -2918,8 +3042,33 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
+@@ -2918,8 +3063,50 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
  	case TCP_NOTSENT_LOWAT:
  		val = tp->notsent_lowat;
  		break;
@@ -3655,8 +3678,6 @@ index 29d240b..4951dc9 100644
 +		val = tp->mptcp_enabled;
 +		break;
 +#endif
- 	default:
--		return -ENOPROTOOPT;
 +
 +	case TCP_MULTIPATH_DEBUG:
 +		val = tp->debug_on;
@@ -3669,19 +3690,37 @@ index 29d240b..4951dc9 100644
 +		/* Implement Me! */
 +		return -EOPNOTSUPP;
 +
-+	case TCP_MULTIPATH_PATHMANAGER:
-+		if (get_user(len, optlen))
-+			return -EFAULT;
-+		len = min_t(unsigned int, len, MPTCP_PM_NAME_MAX);
-+		if (put_user(len, optlen))
-+			return -EFAULT;
-+		if (copy_to_user(optval, tp->mptcp_pm->name, len))
-+			return -EFAULT;
-+		return 0;
++	case TCP_MULTIPATH_PATHMANAGER: {
++			if (get_user(len, optlen))
++				return -EFAULT;
++			len = min_t(unsigned int, len, MPTCP_PM_NAME_MAX);
++			if (put_user(len, optlen))
++				return -EFAULT;
++			if (copy_to_user(optval, tp->mptcp_pm->name, len))
++				return -EFAULT;
++			return 0;
++		}
++		break;
++
++	case TCP_MULTIPATH_SCHEDULER: {
++			if (get_user(len, optlen))
++				return -EFAULT;
++			len = min_t(unsigned int, len, MPTCP_SCHED_NAME_MAX);
++			if (put_user(len, optlen))
++				return -EFAULT;
++			if (copy_to_user(optval, tp->mptcp_sched->name, len))
++				return -EFAULT;
++			return 0;
++		}
++		break;
++
+ 	default:
+ 		return -ENOPROTOOPT;
++		break;
  	}
  
  	if (put_user(len, optlen))
-@@ -3088,8 +3237,11 @@ void tcp_done(struct sock *sk)
+@@ -3088,8 +3275,11 @@ void tcp_done(struct sock *sk)
  	if (sk->sk_state == TCP_SYN_SENT || sk->sk_state == TCP_SYN_RECV)
  		TCP_INC_STATS_BH(sock_net(sk), TCP_MIB_ATTEMPTFAILS);
  
@@ -9173,7 +9212,7 @@ index 0000000..ab4477e
 +MODULE_VERSION("0.1");
 diff --git a/net/mptcp/mptcp_ctrl.c b/net/mptcp/mptcp_ctrl.c
 new file mode 100644
-index 0000000..4601a60
+index 0000000..3f20963
 --- /dev/null
 +++ b/net/mptcp/mptcp_ctrl.c
 @@ -0,0 +1,2507 @@
@@ -10382,7 +10421,7 @@ index 0000000..4601a60
 +	atomic_set(&mpcb->mpcb_refcnt, 1);
 +
 +	mptcp_init_path_manager(mpcb, meta_tp);
-+	mptcp_init_scheduler(mpcb);
++	mptcp_init_scheduler(mpcb, meta_tp);
 +
 +	setup_timer(&mpcb->synack_timer, mptcp_synack_timer_handler,
 +		    (unsigned long)meta_sk);
@@ -19860,10 +19899,10 @@ index 0000000..71a9e7c
 +
 diff --git a/net/mptcp/mptcp_sched.c b/net/mptcp/mptcp_sched.c
 new file mode 100644
-index 0000000..ae1805e
+index 0000000..2ae21f5
 --- /dev/null
 +++ b/net/mptcp/mptcp_sched.c
-@@ -0,0 +1,496 @@
+@@ -0,0 +1,504 @@
 +/* MPTCP Scheduler module selector. Highly inspired by tcp_cong.c */
 +
 +#include <linux/module.h>
@@ -20251,7 +20290,7 @@ index 0000000..ae1805e
 +	.owner = THIS_MODULE,
 +};
 +
-+static struct mptcp_sched_ops *mptcp_sched_find(const char *name)
++struct mptcp_sched_ops *mptcp_sched_find(const char *name)
 +{
 +	struct mptcp_sched_ops *e;
 +
@@ -20332,9 +20371,17 @@ index 0000000..ae1805e
 +	return ret;
 +}
 +
-+void mptcp_init_scheduler(struct mptcp_cb *mpcb)
++void mptcp_init_scheduler(struct mptcp_cb *mpcb, struct tcp_sock *meta_tp)
 +{
 +	struct mptcp_sched_ops *sched;
++
++	if (meta_tp->mptcp_sched) {
++		sched = meta_tp->mptcp_sched;
++		if (try_module_get(sched->owner)) {
++			mpcb->sched_ops = sched;
++			return;
++		}
++	}
 +
 +	rcu_read_lock();
 +	list_for_each_entry_rcu(sched, &mptcp_sched_list, list) {
