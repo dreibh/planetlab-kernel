@@ -625,7 +625,7 @@ Patch00: patch-3.%{base_sublevel}-git%{gitrev}.xz
 
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
-Patch02: 0001-MPTCP-0.89.4-with-socketoptions.patch
+Patch02: 0001-MPTCP-0.89.5-with-socketoptions.patch
 Patch03: 0001-Add-Balia-Congestion-Control-Module.patch
 # ###### NorNet Kernel ######
 
@@ -1301,7 +1301,7 @@ do
 done
 
 # ###### NorNet Kernel ######
-ApplyPatch 0001-MPTCP-0.89.4-with-socketoptions.patch
+ApplyPatch 0001-MPTCP-0.89.5-with-socketoptions.patch
 ApplyPatch 0001-Add-Balia-Congestion-Control-Module.patch
 # ###### NorNet Kernel ######
 
