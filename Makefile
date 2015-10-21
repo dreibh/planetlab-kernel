@@ -33,51 +33,72 @@ ifndef RELEASE
 RELEASE := $(shell rpm $(RPMDEFS) $(DISTDEFS) -q --qf "%{RELEASE}\n" --specfile $(SPECFILE)| head -1)
 endif
 
-define get_sources_sha1
-$(shell cat sources 2>/dev/null | awk 'gensub("^.*/", "", 1, $$2) == "$@" { print $$1; exit; }')
-endef
-define get_sources_url1
-$(shell cat sources 2>/dev/null | awk 'gensub("^.*/", "", 1, $$2) == "$@" { print $$2; exit; }')
-endef
-define get_sources_url2
-$(shell cat sources 2>/dev/null | awk 'gensub("^.*/", "", 1, $$2) == "$@" { print $$3; exit; }')
-endef
-SOURCEFILES := $(shell cat sources 2>/dev/null | awk '{ print gensub("^.*/", "", 1, $$2) }')
-SOURCE_RPM := $(firstword $(SOURCEFILES))
 
-sources: $(SOURCEFILES) $(TARGETS)
-
-$(SOURCEFILES): #FORCE
-	@if [ ! -e "$@" ] ; then \
-	 { echo Using primary; echo "$(CLIENT) $(get_sources_url1)" ; $(CLIENT) $(get_sources_url1) ; } || \
-	 { echo Using secondary; echo "$(CLIENT) $(get_sources_url2)" ; $(CLIENT) $(get_sources_url2) ; } ; fi
-	@if [ ! -e "$@" ] ; then echo "Could not download source file: $@ does not exist" ; exit 1 ; fi
-	@if test "$$(sha1sum $@ | awk '{print $$1}')" != "$(get_sources_sha1)" ; then \
-	    echo "sha1sum of the downloaded $@ does not match the one from 'sources' file" ; \
-	    echo "Local copy: $$(sha1sum $@)" ; \
-	    echo "In sources: $$(grep $@ sources)" ; \
-	    exit 1 ; \
-	else \
-	    ls -l $@ ; \
-	fi
-
-download-sources:
-	@for i in $(SOURCES); do \
-		if [ ! -e "$${i##*/}" ]; then \
-			echo "$(CLIENT) $$i"; \
-			$(CLIENT) $$i; \
-		fi; \
-	done
-
-replace-sources:
-	rm -f sources
-	@$(MAKE) new-sources
-
-new-sources: download-sources
-	@for i in $(SOURCES); do \
-		echo "$(SHA1SUM) $$i >> sources"; \
-		$(SHA1SUM) $${i##*/} | $(AWK) '{ printf "%s  %s\n", $$1, "'"$$i"'" }' >> sources; \
-	done
+# define get_upstream_repository
+# $(shell cat upstream | sed -e 's/@.*$$//g')
+# endef
+# define get_upstream_branch
+# $(shell cat upstream | sed -e 's/^.*@//g')
+# endef
+#
+# get-upstream-kernel:
+# 	if [ ! -e upstream-kernel ] ; then  git clone $(get_upstream_repository) upstream-kernel ; fi
+# 	cd upstream-kernel
+# 	git checkout $(get_upstream_branch)
+# 	echo "U0"
+# 	cat sources | (
+# 	  while read a b ; do
+# 	    echo "a=$a b=$b"
+# 	  done
+# 	)
+# 	cd ..
+#
+#
+# define get_sources_sha1
+# $(shell cat sources 2>/dev/null | awk 'gensub("^.*/", "", 1, $$2) == "$@" { print $$1; exit; }')
+# endef
+# define get_sources_url1
+# $(shell cat sources 2>/dev/null | awk 'gensub("^.*/", "", 1, $$2) == "$@" { print $$2; exit; }')
+# endef
+# define get_sources_url2
+# $(shell cat sources 2>/dev/null | awk 'gensub("^.*/", "", 1, $$2) == "$@" { print $$3; exit; }')
+# endef
+# SOURCEFILES := $(shell cat sources 2>/dev/null | awk '{ print gensub("^.*/", "", 1, $$2) }')
+# SOURCE_RPM := $(firstword $(SOURCEFILES))
+#
+# sources: upstream-kernel $(SOURCEFILES) $(TARGETS)
+#
+# $(SOURCEFILES): #FORCE
+# 	@if [ ! -e "$@" ] ; then \
+# 	 { echo Using primary; echo "$(CLIENT) $(get_sources_url1)" ; $(CLIENT) $(get_sources_url1) ; } || \
+# 	 { echo Using secondary; echo "$(CLIENT) $(get_sources_url2)" ; $(CLIENT) $(get_sources_url2) ; } ; fi
+# 	@if [ ! -e "$@" ] ; then echo "Could not download source file: $@ does not exist" ; exit 1 ; fi
+# 	@if test "$$(sha1sum $@ | awk '{print $$1}')" != "$(get_sources_sha1)" ; then \
+# 	    echo "sha1sum of the downloaded $@ does not match the one from 'sources' file" ; \
+# 	    echo "Local copy: $$(sha1sum $@)" ; \
+# 	    echo "In sources: $$(grep $@ sources)" ; \
+# 	    exit 1 ; \
+# 	else \
+# 	    ls -l $@ ; \
+# 	fi
+#
+# download-sources:
+# 	@for i in $(SOURCES); do \
+# 		if [ ! -e "$${i##*/}" ]; then \
+# 			echo "$(CLIENT) $$i"; \
+# 			$(CLIENT) $$i; \
+# 		fi; \
+# 	done
+#
+# replace-sources:
+# 	rm -f sources
+# 	@$(MAKE) new-sources
+#
+# new-sources: download-sources
+# 	@for i in $(SOURCES); do \
+# 		echo "$(SHA1SUM) $$i >> sources"; \
+# 		$(SHA1SUM) $${i##*/} | $(AWK) '{ printf "%s  %s\n", $$1, "'"$$i"'" }' >> sources; \
+# 	done
 
 # TD 21.03.2014: Needs to define _specdir. Otherwise, the spec file is not found.
 #                This triggers "patch  xxxxx  not listed as a source patch in specfile",
@@ -97,15 +118,16 @@ RPMDIRDEFS = \
 # install our own specfile and patched patches
 # and patch configs
 # then rewrap with rpm
-srpm: sources
+srpm:
+	./fetch-upstream-kernel
 	mkdir -p SOURCES SRPMS
-	(cd SOURCES; rpm2cpio ../$(SOURCE_RPM) | cpio -diu; \
+	(cd SOURCES; cp ../upstream-kernel/* .; \
 	 cp ../$(notdir $(SPECFILE)) . ; cp ../*.patch .; cp ../config-planetlab .; \
 	 for downloaded in $(SOURCEFILES) ; do cp ../$$downloaded . ; done ; \
 	 cat config-planetlab >> config-generic)
 	./rpmmacros.sh
 	export HOME=$(shell pwd) ; rpmbuild $(RPMDIRDEFS) $(RPMDEFS) --nodeps -bs $(SPECFILE)
-	# ??? FIXME!!! rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
+	# FIXME!!! rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
 
 TARGET ?= $(shell uname -m)
 rpm: srpm
@@ -124,3 +146,4 @@ whipe: clean
 clean:
 	rm -f kernel-*.src.rpm
 	rm -rf BUILDROOT SOURCES SPECS SRPMS tmp
+	rm -rf upstream-kernel

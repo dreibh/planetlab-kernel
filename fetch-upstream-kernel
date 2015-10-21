@@ -1,0 +1,35 @@
+#!/bin/bash -e
+
+UPSTREAM_KERNEL_REPOSITORY=`cat upstream | sed -e 's/@.*$//g'`
+UPSTREAM_KERNEL_BRANCH=`cat upstream | sed -e 's/^.*@//g'`
+
+KERNEL_SOURCES_URL="http://ftp.kernel.org/pub/linux/kernel/v4.x/"
+
+
+if [ ! -e upstream-kernel ] ; then
+   git clone "$UPSTREAM_KERNEL_REPOSITORY" upstream-kernel
+fi
+cd upstream-kernel
+git checkout "$UPSTREAM_KERNEL_BRANCH" .
+cat sources | (
+   while read checksum file ; do
+      if [ ! -e $file ] ; then
+         echo "Fetching $file ..."
+         curl $KERNEL_SOURCES_URL/$file >$file.tmp
+         mv $file.tmp $file
+      fi
+      if [ "`md5sum $file | awk '{ print $1 }'`" != "$checksum" ] ; then
+         echo "SHA1 sum of the downloaded $file does not match the one from 'sources' file!"
+         echo "Local copy: `md5sum $file | awk '{ print $1 }'`"
+         echo "In sources: $checksum"
+
+         if [ "$file" == "perf-man-4.1.tar.gz" ] ; then
+            continue   # FIXME! Work-around for v4.1.10!
+         fi
+
+         exit 1
+      fi
+   done
+)
+cd ..
+echo "done!"
