@@ -396,7 +396,6 @@ BuildRequires: rpm-build, elfutils
 %if %{signmodules}
 BuildRequires: openssl
 BuildRequires: pesign >= 0.10-4
-BuildRequires: pesign-rh-test-certs
 %endif
 
 %if %{with_cross}
