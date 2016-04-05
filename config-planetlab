@@ -4,9 +4,10 @@
 # ###### NorNet Kernel ######################################################
 
 # ====== System ===========================================
-# CONFIG_CC_STACKPROTECTOR_STRONG is not supported by F18's gcc
-CONFIG_CC_STACKPROTECTOR_STRONG=
-CONFIG_CC_STACKPROTECTOR_REGULAR=y
+# For F18 only:
+# NOTE: CONFIG_CC_STACKPROTECTOR_STRONG is not supported by F18's gcc
+# -- CONFIG_CC_STACKPROTECTOR_STRONG=
+# -- CONFIG_CC_STACKPROTECTOR_REGULAR=y
 
 # ====== MPTCP ============================================
 CONFIG_TCP_CONG_LIA=m
