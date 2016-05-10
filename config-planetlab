@@ -25,6 +25,7 @@ CONFIG_MPTCP_BINDER=m
 CONFIG_DEFAULT_MPTCP_PM="fullmesh"
 CONFIG_MPTCP_SCHED_ADVANCED=y
 CONFIG_MPTCP_ROUNDROBIN=m
+CONFIG_MPTCP_REDUNDANT=m
 CONFIG_DEFAULT_MPTCP_SCHED="default"
 
 # ###### NorNet Kernel ######################################################
