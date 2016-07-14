@@ -40,7 +40,7 @@ Summary: The Linux kernel
 # For non-released -rc kernels, this will be appended after the rcX and
 # gitX tags, so a 3 here would become part of release "0.rcX.gitX.3"
 #
-%global baserelease 200
+%global baserelease 888
 %global fedora_build %{baserelease}
 
 # base_sublevel is the kernel version we're starting with and patching
@@ -52,7 +52,7 @@ Summary: The Linux kernel
 %if 0%{?released_kernel}
 
 # Do we have a -stable update to apply?
-%define stable_update 10
+%define stable_update 28
 # Set rpm version accordingly
 %if 0%{?stable_update}
 %define stablerev %{stable_update}
@@ -488,7 +488,7 @@ Patch00: patch-4.%{base_sublevel}-git%{gitrev}.xz
 
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
-Patch02: 0001-MPTCP-v0.90-with-socketoptions-against-v4.1.patch
+Patch02: 0001-MPTCP-v0.91-with-socketoptions-against-v4.1.28.patch
 # ###### NorNet Kernel ######
 
 # build tweak for build ID magic, even for -vanilla
@@ -706,7 +706,12 @@ AutoProv: yes\
 # ###### NorNet Kernel ######
 # define variant -nornet
 %define buildid .nornet
-# define nopatches 0
+# !!! NOTE: This skips all Fedora-provided patches! !!!
+# !!! Since latest Fedora kernel is 4.1.10, and this is 4.1.24, everything
+# !!! relevant should be upstream already => no need to handle Fedora patches.
+%define nopatches 1
+# !!! NOTE: Do not complain about new options!
+%define listnewconfig_fail 0
 # ###### NorNet Kernel ######
 
 
@@ -1235,7 +1240,7 @@ done
 %endif
 
 # ###### NorNet Kernel ######
-ApplyPatch 0001-MPTCP-v0.90-with-socketoptions-against-v4.1.patch
+ApplyPatch 0001-MPTCP-v0.91-with-socketoptions-against-v4.1.28.patch
 # ###### NorNet Kernel ######
 
 ApplyPatch kbuild-AFTER_LINK.patch
