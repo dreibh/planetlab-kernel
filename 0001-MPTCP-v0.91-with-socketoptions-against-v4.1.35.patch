@@ -4989,7 +4989,7 @@ index 13b92d5..270a079 100644
  EXPORT_SYMBOL(tcp_prot);
  
 diff --git a/net/ipv4/tcp_minisocks.c b/net/ipv4/tcp_minisocks.c
-index fec2907..a61aacf 100644
+index fec2907..9560f7f 100644
 --- a/net/ipv4/tcp_minisocks.c
 +++ b/net/ipv4/tcp_minisocks.c
 @@ -18,11 +18,13 @@
@@ -5006,22 +5006,24 @@ index fec2907..a61aacf 100644
  #include <net/tcp.h>
  #include <net/inet_common.h>
  #include <net/xfrm.h>
-@@ -103,10 +105,13 @@ tcp_timewait_state_process(struct inet_timewait_sock *tw, struct sk_buff *skb,
+@@ -103,10 +105,14 @@ tcp_timewait_state_process(struct inet_timewait_sock *tw, struct sk_buff *skb,
  	struct tcp_options_received tmp_opt;
  	struct tcp_timewait_sock *tcptw = tcp_twsk((struct sock *)tw);
  	bool paws_reject = false;
 +	struct mptcp_options_received mopt;
  
  	tmp_opt.saw_tstamp = 0;
- 	if (th->doff > (sizeof(*th) >> 2) && tcptw->tw_ts_recent_stamp) {
+-	if (th->doff > (sizeof(*th) >> 2) && tcptw->tw_ts_recent_stamp) {
 -		tcp_parse_options(skb, &tmp_opt, 0, NULL);
++	if (th->doff > (sizeof(*th) >> 2) &&
++	    (tcptw->tw_ts_recent_stamp || tcptw->mptcp_tw)) {
 +		mptcp_init_mp_opt(&mopt);
 +
 +		tcp_parse_options(skb, &tmp_opt, &mopt, 0, NULL, NULL);
  
  		if (tmp_opt.saw_tstamp) {
  			tmp_opt.rcv_tsecr	-= tcptw->tw_ts_offset;
-@@ -114,6 +119,11 @@ tcp_timewait_state_process(struct inet_timewait_sock *tw, struct sk_buff *skb,
+@@ -114,6 +120,11 @@ tcp_timewait_state_process(struct inet_timewait_sock *tw, struct sk_buff *skb,
  			tmp_opt.ts_recent_stamp	= tcptw->tw_ts_recent_stamp;
  			paws_reject = tcp_paws_reject(&tmp_opt, th->rst);
  		}
@@ -5033,7 +5035,7 @@ index fec2907..a61aacf 100644
  	}
  
  	if (tw->tw_substate == TCP_FIN_WAIT2) {
-@@ -137,6 +147,16 @@ tcp_timewait_state_process(struct inet_timewait_sock *tw, struct sk_buff *skb,
+@@ -137,6 +148,16 @@ tcp_timewait_state_process(struct inet_timewait_sock *tw, struct sk_buff *skb,
  		if (!th->ack ||
  		    !after(TCP_SKB_CB(skb)->end_seq, tcptw->tw_rcv_nxt) ||
  		    TCP_SKB_CB(skb)->end_seq == TCP_SKB_CB(skb)->seq) {
@@ -5050,7 +5052,7 @@ index fec2907..a61aacf 100644
  			inet_twsk_put(tw);
  			return TCP_TW_SUCCESS;
  		}
-@@ -293,6 +313,15 @@ void tcp_time_wait(struct sock *sk, int state, int timeo)
+@@ -293,6 +314,15 @@ void tcp_time_wait(struct sock *sk, int state, int timeo)
  		tcptw->tw_ts_offset	= tp->tsoffset;
  		tcptw->tw_last_oow_ack_time = 0;
  
@@ -5066,7 +5068,7 @@ index fec2907..a61aacf 100644
  #if IS_ENABLED(CONFIG_IPV6)
  		if (tw->tw_family == PF_INET6) {
  			struct ipv6_pinfo *np = inet6_sk(sk);
-@@ -348,15 +377,18 @@ void tcp_time_wait(struct sock *sk, int state, int timeo)
+@@ -348,15 +378,18 @@ void tcp_time_wait(struct sock *sk, int state, int timeo)
  		NET_INC_STATS_BH(sock_net(sk), LINUX_MIB_TCPTIMEWAITOVERFLOW);
  	}
  
@@ -5086,7 +5088,7 @@ index fec2907..a61aacf 100644
  	if (twsk->tw_md5_key)
  		kfree_rcu(twsk->tw_md5_key, rcu);
  #endif
-@@ -383,13 +415,14 @@ void tcp_openreq_init_rwin(struct request_sock *req,
+@@ -383,13 +416,14 @@ void tcp_openreq_init_rwin(struct request_sock *req,
  		req->window_clamp = tcp_full_space(sk);
  
  	/* tcp_full_space because it is guaranteed to be the first packet */
@@ -5104,7 +5106,7 @@ index fec2907..a61aacf 100644
  	ireq->rcv_wscale = rcv_wscale;
  }
  EXPORT_SYMBOL(tcp_openreq_init_rwin);
-@@ -525,6 +558,8 @@ struct sock *tcp_create_openreq_child(struct sock *sk, struct request_sock *req,
+@@ -525,6 +559,8 @@ struct sock *tcp_create_openreq_child(struct sock *sk, struct request_sock *req,
  			newtp->rx_opt.ts_recent_stamp = 0;
  			newtp->tcp_header_len = sizeof(struct tcphdr);
  		}
@@ -5113,7 +5115,7 @@ index fec2907..a61aacf 100644
  		newtp->tsoffset = 0;
  #ifdef CONFIG_TCP_MD5SIG
  		newtp->md5sig_info = NULL;	/*XXX*/
-@@ -560,16 +595,20 @@ struct sock *tcp_check_req(struct sock *sk, struct sk_buff *skb,
+@@ -560,16 +596,20 @@ struct sock *tcp_check_req(struct sock *sk, struct sk_buff *skb,
  			   bool fastopen)
  {
  	struct tcp_options_received tmp_opt;
@@ -5136,7 +5138,7 @@ index fec2907..a61aacf 100644
  
  		if (tmp_opt.saw_tstamp) {
  			tmp_opt.ts_recent = req->ts_recent;
-@@ -608,7 +647,14 @@ struct sock *tcp_check_req(struct sock *sk, struct sk_buff *skb,
+@@ -608,7 +648,14 @@ struct sock *tcp_check_req(struct sock *sk, struct sk_buff *skb,
  		 *
  		 * Reset timer after retransmitting SYNACK, similar to
  		 * the idea of fast retransmit in recovery.
@@ -5151,7 +5153,7 @@ index fec2907..a61aacf 100644
  		if (!tcp_oow_rate_limited(sock_net(sk), skb,
  					  LINUX_MIB_TCPACKSKIPPEDSYNRECV,
  					  &tcp_rsk(req)->last_oow_ack_time) &&
-@@ -757,6 +803,18 @@ struct sock *tcp_check_req(struct sock *sk, struct sk_buff *skb,
+@@ -757,6 +804,18 @@ struct sock *tcp_check_req(struct sock *sk, struct sk_buff *skb,
  	if (!child)
  		goto listen_overflow;
  
@@ -5170,7 +5172,7 @@ index fec2907..a61aacf 100644
  	inet_csk_reqsk_queue_drop(sk, req);
  	inet_csk_reqsk_queue_add(sk, req, child);
  	/* Warning: caller must not call reqsk_put(req);
-@@ -807,8 +865,9 @@ int tcp_child_process(struct sock *parent, struct sock *child,
+@@ -807,8 +866,9 @@ int tcp_child_process(struct sock *parent, struct sock *child,
  {
  	int ret = 0;
  	int state = child->sk_state;
@@ -5181,7 +5183,7 @@ index fec2907..a61aacf 100644
  		ret = tcp_rcv_state_process(child, skb, tcp_hdr(skb),
  					    skb->len);
  		/* Wakeup parent, send SIGIO */
-@@ -819,10 +878,14 @@ int tcp_child_process(struct sock *parent, struct sock *child,
+@@ -819,10 +879,14 @@ int tcp_child_process(struct sock *parent, struct sock *child,
  		 * in main socket hash table and lock on listening
  		 * socket does not protect us more.
  		 */
@@ -8044,10 +8046,10 @@ index 0000000..5d76116
 +MODULE_VERSION("0.1");
 diff --git a/net/mptcp/mptcp_ctrl.c b/net/mptcp/mptcp_ctrl.c
 new file mode 100644
-index 0000000..dfefce6
+index 0000000..c93865f
 --- /dev/null
 +++ b/net/mptcp/mptcp_ctrl.c
-@@ -0,0 +1,2685 @@
+@@ -0,0 +1,2686 @@
 +/*
 + *	MPTCP implementation - MPTCP-control
 + *
@@ -10241,22 +10243,22 @@ index 0000000..dfefce6
 +/* Updates the rcv_nxt of the time-wait-socks and allows them to ack a
 + * data-fin.
 + */
-+void mptcp_time_wait(struct sock *sk, int state, int timeo)
++void mptcp_time_wait(struct sock *meta_sk, int state, int timeo)
 +{
-+	struct tcp_sock *tp = tcp_sk(sk);
++	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
 +	struct mptcp_tw *mptw;
 +
 +	/* Used for sockets that go into tw after the meta
 +	 * (see mptcp_init_tw_sock())
 +	 */
-+	tp->mpcb->in_time_wait = 1;
-+	tp->mpcb->mptw_state = state;
++	meta_tp->mpcb->in_time_wait = 1;
++	meta_tp->mpcb->mptw_state = state;
 +
 +	/* Update the time-wait-sock's information */
 +	rcu_read_lock_bh();
-+	list_for_each_entry_rcu(mptw, &tp->mpcb->tw_list, list) {
++	list_for_each_entry_rcu(mptw, &meta_tp->mpcb->tw_list, list) {
 +		mptw->meta_tw = 1;
-+		mptw->rcv_nxt = mptcp_get_rcv_nxt_64(tp);
++		mptw->rcv_nxt = mptcp_get_rcv_nxt_64(meta_tp);
 +
 +		/* We want to ack a DATA_FIN, but are yet in FIN_WAIT_2 -
 +		 * pretend as if the DATA_FIN has already reached us, that way
@@ -10268,7 +10270,8 @@ index 0000000..dfefce6
 +	}
 +	rcu_read_unlock_bh();
 +
-+	tcp_done(sk);
++	if (meta_sk->sk_state != TCP_CLOSE)
++		tcp_done(meta_sk);
 +}
 +
 +void mptcp_tsq_flags(struct sock *sk)
@@ -10704,7 +10707,7 @@ index 0000000..dfefce6
 +	if (mptcp_register_scheduler(&mptcp_sched_default))
 +		goto register_sched_failed;
 +
-+	pr_info("MPTCP: Stable release v0.91");
++	pr_info("MPTCP: Stable release v0.91.1");
 +
 +	mptcp_init_failed = false;
 +
@@ -12612,10 +12615,10 @@ index 0000000..1e5b753
 +MODULE_VERSION("0.88");
 diff --git a/net/mptcp/mptcp_input.c b/net/mptcp/mptcp_input.c
 new file mode 100644
-index 0000000..95ff08d
+index 0000000..1dfe3da
 --- /dev/null
 +++ b/net/mptcp/mptcp_input.c
-@@ -0,0 +1,2499 @@
+@@ -0,0 +1,2504 @@
 +/*
 + *	MPTCP implementation - Sending side
 + *
@@ -13608,8 +13611,7 @@ index 0000000..95ff08d
 +			meta_tp->rcv_nxt = TCP_SKB_CB(tmp1)->end_seq;
 +			mptcp_check_rcvseq_wrap(meta_tp, old_rcv_nxt);
 +
-+			if ((TCP_SKB_CB(tmp1)->tcp_flags & TCPHDR_FIN) &&
-+			    !mpcb->in_time_wait)
++			if (TCP_SKB_CB(tmp1)->tcp_flags & TCPHDR_FIN)
 +				mptcp_fin(meta_sk);
 +
 +			/* Check if this fills a gap in the ofo queue */
@@ -13956,6 +13958,7 @@ index 0000000..95ff08d
 +	struct sock *sk = NULL, *sk_it;
 +	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
 +	struct mptcp_cb *mpcb = meta_tp->mpcb;
++	unsigned char state;
 +
 +	mptcp_for_each_sk(mpcb, sk_it) {
 +		if (tcp_sk(sk_it)->mptcp->path_index == mpcb->dfin_path_index) {
@@ -13969,10 +13972,15 @@ index 0000000..95ff08d
 +
 +	inet_csk_schedule_ack(sk);
 +
-+	meta_sk->sk_shutdown |= RCV_SHUTDOWN;
-+	sock_set_flag(meta_sk, SOCK_DONE);
++	if (!mpcb->in_time_wait) {
++		meta_sk->sk_shutdown |= RCV_SHUTDOWN;
++		sock_set_flag(meta_sk, SOCK_DONE);
++		state = meta_sk->sk_state;
++	} else {
++		state = mpcb->mptw_state;
++	}
 +
-+	switch (meta_sk->sk_state) {
++	switch (state) {
 +	case TCP_SYN_RECV:
 +	case TCP_ESTABLISHED:
 +		/* Move to CLOSE_WAIT */
@@ -20352,3 +20360,28 @@ index 0000000..29ca1d8
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("MPTCP wVegas");
 +MODULE_VERSION("0.1");
+diff --git a/scripts/setlocalversion b/scripts/setlocalversion
+index 63d91e2..fafa4b7 100755
+--- a/scripts/setlocalversion
++++ b/scripts/setlocalversion
+@@ -160,15 +160,15 @@ res="${res}${CONFIG_LOCALVERSION}${LOCALVERSION}"
+ if test "$CONFIG_LOCALVERSION_AUTO" = "y"; then
+ 	# full scm version string
+ 	res="$res$(scm_version)"
+-else
++# else
+ 	# append a plus sign if the repository is not in a clean
+ 	# annotated or signed tagged state (as git describe only
+ 	# looks at signed or annotated tags - git tag -a/-s) and
+ 	# LOCALVERSION= is not specified
+-	if test "${LOCALVERSION+set}" != "set"; then
+-		scm=$(scm_version --short)
+-		res="$res${scm:++}"
+-	fi
++# 	if test "${LOCALVERSION+set}" != "set"; then
++# 		scm=$(scm_version --short)
++# 		res="$res${scm:++}"
++# 	fi
+ fi
+ 
+ echo "$res"
