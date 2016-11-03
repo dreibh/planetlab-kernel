@@ -8046,10 +8046,10 @@ index 0000000..5d76116
 +MODULE_VERSION("0.1");
 diff --git a/net/mptcp/mptcp_ctrl.c b/net/mptcp/mptcp_ctrl.c
 new file mode 100644
-index 0000000..c93865f
+index 0000000..e81b145
 --- /dev/null
 +++ b/net/mptcp/mptcp_ctrl.c
-@@ -0,0 +1,2686 @@
+@@ -0,0 +1,2692 @@
 +/*
 + *	MPTCP implementation - MPTCP-control
 + *
@@ -8675,7 +8675,13 @@ index 0000000..c93865f
 +		if (!sock_flag(meta_sk, SOCK_DEAD))
 +			meta_sk->sk_error_report(meta_sk);
 +
-+		tcp_done(meta_sk);
++		WARN(meta_sk->sk_state == TCP_CLOSE,
++		     "Meta already closed i_rcv %u i_snd %u send_i %u flags %#lx\n",
++		     mpcb->infinite_mapping_rcv, mpcb->infinite_mapping_snd,
++		     mpcb->send_infinite_mapping, meta_sk->sk_flags);
++
++		if (meta_sk->sk_state != TCP_CLOSE)
++			tcp_done(meta_sk);
 +	}
 +
 +	sk->sk_err = 0;
@@ -15125,10 +15131,10 @@ index 0000000..1dfe3da
 +}
 diff --git a/net/mptcp/mptcp_ipv4.c b/net/mptcp/mptcp_ipv4.c
 new file mode 100644
-index 0000000..cbf3c438
+index 0000000..3f2dfec
 --- /dev/null
 +++ b/net/mptcp/mptcp_ipv4.c
-@@ -0,0 +1,496 @@
+@@ -0,0 +1,495 @@
 +/*
 + *	MPTCP implementation - IPv4-specific functions
 + *
@@ -15467,24 +15473,22 @@ index 0000000..cbf3c438
 +	struct tcp_sock *tp;
 +	struct sock *sk;
 +	struct sockaddr_in loc_in, rem_in;
-+	struct socket sock;
++	struct socket_alloc sock_full;
++	struct socket *sock = (struct socket *)&sock_full;
 +	int ret;
 +
 +	/** First, create and prepare the new socket */
++	memcpy(&sock_full, meta_sk->sk_socket, sizeof(sock_full));
++	sock->state = SS_UNCONNECTED;
++	sock->ops = NULL;
 +
-+	sock.type = meta_sk->sk_socket->type;
-+	sock.state = SS_UNCONNECTED;
-+	sock.wq = meta_sk->sk_socket->wq;
-+	sock.file = meta_sk->sk_socket->file;
-+	sock.ops = NULL;
-+
-+	ret = inet_create(sock_net(meta_sk), &sock, IPPROTO_TCP, 1);
++	ret = inet_create(sock_net(meta_sk), sock, IPPROTO_TCP, 1);
 +	if (unlikely(ret < 0)) {
 +		mptcp_debug("%s inet_create failed ret: %d\n", __func__, ret);
 +		return ret;
 +	}
 +
-+	sk = sock.sk;
++	sk = sock->sk;
 +	tp = tcp_sk(sk);
 +
 +	/* All subsockets need the MPTCP-lock-class */
@@ -15514,7 +15518,8 @@ index 0000000..cbf3c438
 +	if (loc->if_idx)
 +		sk->sk_bound_dev_if = loc->if_idx;
 +
-+	ret = sock.ops->bind(&sock, (struct sockaddr *)&loc_in, sizeof(struct sockaddr_in));
++	ret = sock->ops->bind(sock, (struct sockaddr *)&loc_in,
++			      sizeof(struct sockaddr_in));
 +	if (ret < 0) {
 +		mptcp_debug("%s: MPTCP subsocket bind() failed, error %d\n",
 +			    __func__, ret);
@@ -15530,8 +15535,8 @@ index 0000000..cbf3c438
 +	if (tcp_sk(meta_sk)->mpcb->pm_ops->init_subsocket_v4)
 +		tcp_sk(meta_sk)->mpcb->pm_ops->init_subsocket_v4(sk, rem->addr);
 +
-+	ret = sock.ops->connect(&sock, (struct sockaddr *)&rem_in,
-+				sizeof(struct sockaddr_in), O_NONBLOCK);
++	ret = sock->ops->connect(sock, (struct sockaddr *)&rem_in,
++				 sizeof(struct sockaddr_in), O_NONBLOCK);
 +	if (ret < 0 && ret != -EINPROGRESS) {
 +		mptcp_debug("%s: MPTCP subsocket connect() failed, error %d\n",
 +			    __func__, ret);
@@ -15627,10 +15632,10 @@ index 0000000..cbf3c438
 +}
 diff --git a/net/mptcp/mptcp_ipv6.c b/net/mptcp/mptcp_ipv6.c
 new file mode 100644
-index 0000000..9daa699
+index 0000000..9505a703
 --- /dev/null
 +++ b/net/mptcp/mptcp_ipv6.c
-@@ -0,0 +1,533 @@
+@@ -0,0 +1,532 @@
 +/*
 + *	MPTCP implementation - IPv6-specific functions
 + *
@@ -15985,24 +15990,22 @@ index 0000000..9daa699
 +	struct tcp_sock *tp;
 +	struct sock *sk;
 +	struct sockaddr_in6 loc_in, rem_in;
-+	struct socket sock;
++	struct socket_alloc sock_full;
++	struct socket *sock = (struct socket *)&sock_full;
 +	int ret;
 +
 +	/** First, create and prepare the new socket */
++	memcpy(&sock_full, meta_sk->sk_socket, sizeof(sock_full));
++	sock->state = SS_UNCONNECTED;
++	sock->ops = NULL;
 +
-+	sock.type = meta_sk->sk_socket->type;
-+	sock.state = SS_UNCONNECTED;
-+	sock.wq = meta_sk->sk_socket->wq;
-+	sock.file = meta_sk->sk_socket->file;
-+	sock.ops = NULL;
-+
-+	ret = inet6_create(sock_net(meta_sk), &sock, IPPROTO_TCP, 1);
++	ret = inet6_create(sock_net(meta_sk), sock, IPPROTO_TCP, 1);
 +	if (unlikely(ret < 0)) {
 +		mptcp_debug("%s inet6_create failed ret: %d\n", __func__, ret);
 +		return ret;
 +	}
 +
-+	sk = sock.sk;
++	sk = sock->sk;
 +	tp = tcp_sk(sk);
 +
 +	/* All subsockets need the MPTCP-lock-class */
@@ -16032,7 +16035,8 @@ index 0000000..9daa699
 +	if (loc->if_idx)
 +		sk->sk_bound_dev_if = loc->if_idx;
 +
-+	ret = sock.ops->bind(&sock, (struct sockaddr *)&loc_in, sizeof(struct sockaddr_in6));
++	ret = sock->ops->bind(sock, (struct sockaddr *)&loc_in,
++			      sizeof(struct sockaddr_in6));
 +	if (ret < 0) {
 +		mptcp_debug("%s: MPTCP subsocket bind()failed, error %d\n",
 +			    __func__, ret);
@@ -16048,8 +16052,8 @@ index 0000000..9daa699
 +	if (tcp_sk(meta_sk)->mpcb->pm_ops->init_subsocket_v6)
 +		tcp_sk(meta_sk)->mpcb->pm_ops->init_subsocket_v6(sk, rem->addr);
 +
-+	ret = sock.ops->connect(&sock, (struct sockaddr *)&rem_in,
-+				sizeof(struct sockaddr_in6), O_NONBLOCK);
++	ret = sock->ops->connect(sock, (struct sockaddr *)&rem_in,
++				 sizeof(struct sockaddr_in6), O_NONBLOCK);
 +	if (ret < 0 && ret != -EINPROGRESS) {
 +		mptcp_debug("%s: MPTCP subsocket connect() failed, error %d\n",
 +			    __func__, ret);
@@ -16955,10 +16959,10 @@ index 0000000..73298b2
 +MODULE_VERSION("0.1");
 diff --git a/net/mptcp/mptcp_output.c b/net/mptcp/mptcp_output.c
 new file mode 100644
-index 0000000..5f969c1
+index 0000000..8afd6e8
 --- /dev/null
 +++ b/net/mptcp/mptcp_output.c
-@@ -0,0 +1,1777 @@
+@@ -0,0 +1,1787 @@
 +/*
 + *	MPTCP implementation - Sending side
 + *
@@ -17105,6 +17109,10 @@ index 0000000..5f969c1
 +	}
 +
 +	skb->sk = meta_sk;
++
++	/* Reset subflow-specific TCP control-data */
++	TCP_SKB_CB(skb)->sacked = 0;
++	TCP_SKB_CB(skb)->tcp_flags &= (TCPHDR_ACK | TCPHDR_PSH);
 +
 +	/* If it reached already the destination, we don't have to reinject it */
 +	if (!after(TCP_SKB_CB(skb)->end_seq, meta_tp->snd_una)) {
@@ -17429,10 +17437,7 @@ index 0000000..5f969c1
 +	mptcp_save_dss_data_seq(tp, subskb);
 +
 +	tcb->seq = tp->write_seq;
-+	tcb->sacked = 0; /* reset the sacked field: from the point of view
-+			  * of this subflow, we are sending a brand new
-+			  * segment
-+			  */
++
 +	/* Take into account seg len */
 +	tp->write_seq += subskb->len + ((tcb->tcp_flags & TCPHDR_FIN) ? 1 : 0);
 +	tcb->end_seq = tp->write_seq;
@@ -17543,6 +17548,9 @@ index 0000000..5f969c1
 +		unsigned int seg_size = tcp_wnd_end(meta_tp) - TCP_SKB_CB(skb)->seq;
 +		struct sock *subsk = meta_tp->mpcb->sched_ops->get_subflow(meta_sk, skb, true);
 +		struct tcp_sock *subtp;
++
++		WARN_ON(TCP_SKB_CB(skb)->sacked);
++
 +		if (!subsk)
 +			goto window_probe;
 +		subtp = tcp_sk(subsk);
@@ -17621,6 +17629,9 @@ index 0000000..5f969c1
 +	while ((skb = mpcb->sched_ops->next_segment(meta_sk, &reinject, &subsk,
 +						    &sublimit))) {
 +		unsigned int limit;
++
++		WARN(TCP_SKB_CB(skb)->sacked, "sacked: %u reinject: %u",
++		     TCP_SKB_CB(skb)->sacked, reinject);
 +
 +		subtp = tcp_sk(subsk);
 +		mss_now = tcp_current_mss(subsk);
@@ -18222,7 +18233,8 @@ index 0000000..5f969c1
 +	sk = mptcp_select_ack_sock(meta_sk);
 +
 +	/* May happen if no subflow is in an appropriate state, OR
-+	 * we are in infinite mode or about to go there - just send a reset */
++	 * we are in infinite mode or about to go there - just send a reset
++	 */
 +	if (!sk || mpcb->infinite_mapping_snd || mpcb->send_infinite_mapping ||
 +	    mpcb->infinite_mapping_rcv) {
 +
@@ -18351,6 +18363,8 @@ index 0000000..5f969c1
 +	struct sock *subsk;
 +	unsigned int limit, mss_now;
 +	int err = -1;
++
++	WARN_ON(TCP_SKB_CB(skb)->sacked);
 +
 +	/* Do not sent more than we queued. 1/4 is reserved for possible
 +	 * copying overhead: fragmentation, tunneling, mangling etc.
@@ -18921,10 +18935,10 @@ index 0000000..b3dcf8c
 +late_initcall(mptcp_path_manager_default);
 diff --git a/net/mptcp/mptcp_redundant.c b/net/mptcp/mptcp_redundant.c
 new file mode 100644
-index 0000000..c32c29a
+index 0000000..8fa2dba
 --- /dev/null
 +++ b/net/mptcp/mptcp_redundant.c
-@@ -0,0 +1,265 @@
+@@ -0,0 +1,268 @@
 +/*
 + *	MPTCP Scheduler to reduce latency and jitter.
 + *
@@ -19135,6 +19149,9 @@ index 0000000..c32c29a
 +			sk_data->skb_end_seq = TCP_SKB_CB(skb)->end_seq;
 +			cb_data->next_subflow = tp->mptcp->next;
 +			*subsk = (struct sock *)tp;
++
++			if (TCP_SKB_CB(skb)->path_mask)
++				*reinject = -1;
 +			return skb;
 +		}
 +
