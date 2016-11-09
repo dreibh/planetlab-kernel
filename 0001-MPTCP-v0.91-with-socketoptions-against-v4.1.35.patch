@@ -8046,7 +8046,7 @@ index 0000000..5d76116
 +MODULE_VERSION("0.1");
 diff --git a/net/mptcp/mptcp_ctrl.c b/net/mptcp/mptcp_ctrl.c
 new file mode 100644
-index 0000000..e81b145
+index 0000000..c2c3c16
 --- /dev/null
 +++ b/net/mptcp/mptcp_ctrl.c
 @@ -0,0 +1,2692 @@
@@ -10713,7 +10713,7 @@ index 0000000..e81b145
 +	if (mptcp_register_scheduler(&mptcp_sched_default))
 +		goto register_sched_failed;
 +
-+	pr_info("MPTCP: Stable release v0.91.1");
++	pr_info("MPTCP: Stable release v0.91.2");
 +
 +	mptcp_init_failed = false;
 +
