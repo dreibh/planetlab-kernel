@@ -2657,10 +2657,10 @@ index 47fc8bb..a7bf2d6 100644
  
  		filter = rcu_dereference_protected(newsk->sk_filter, 1);
 diff --git a/net/ipv4/Kconfig b/net/ipv4/Kconfig
-index bd29016..2e710cd 100644
+index bd29016..dfc38ae 100644
 --- a/net/ipv4/Kconfig
 +++ b/net/ipv4/Kconfig
-@@ -615,6 +615,46 @@ config TCP_CONG_DCTCP
+@@ -615,6 +615,54 @@ config TCP_CONG_DCTCP
  	For further details see:
  	  http://simula.stanford.edu/~alizade/Site/DCTCP_files/dctcp-final.pdf
  
@@ -2697,17 +2697,25 @@ index bd29016..2e710cd 100644
 +	To enable it, just put 'balia' in tcp_congestion_control
 +
 +config TCP_CONG_CMTRPV2
-+	tristate "MPTCP CMT/RPV2 CONGESTION CONTROL"
++	tristate "MPTCP CMT/RPv2 CONGESTION CONTROL"
 +	depends on MPTCP
 +	default n
 +	---help---
 +	Multipath TCP Concurrent Multipath Transfer / Resource Pooling version 2 Congestion Control
 +	To enable it, just put 'cmtrpv2' in tcp_congestion_control
 +
++	For further details, see:
++	Dreibholz, Thomas: "Evaluation and Optimisation of Multi-Path Transport using
++        the Stream Control Transmission Protocol", Habilitation Treatise, University
++        of Duisburg-Essen, Faculty of Economics, Institute for Computer Science and
++        Business Information Systems, URN urn:nbn:de:hbz:464-20120315-103208-1,
++        March 13, 2012
++        URL: https://duepublico.uni-duisburg-essen.de/servlets/DerivateServlet/Derivate-29737/Dre2012_final.pdf
++
  choice
  	prompt "Default TCP congestion control"
  	default DEFAULT_CUBIC
-@@ -646,6 +686,18 @@ choice
+@@ -646,6 +694,18 @@ choice
  	config DEFAULT_DCTCP
  		bool "DCTCP" if TCP_CONG_DCTCP=y
  
@@ -2726,7 +2734,7 @@ index bd29016..2e710cd 100644
  	config DEFAULT_RENO
  		bool "Reno"
  endchoice
-@@ -666,6 +718,10 @@ config DEFAULT_TCP_CONG
+@@ -666,6 +726,10 @@ config DEFAULT_TCP_CONG
  	default "vegas" if DEFAULT_VEGAS
  	default "westwood" if DEFAULT_WESTWOOD
  	default "veno" if DEFAULT_VENO
@@ -7779,21 +7787,28 @@ index 0000000..93d3f86
 +MODULE_VERSION("0.1");
 diff --git a/net/mptcp/mptcp_cmtrpv2.c b/net/mptcp/mptcp_cmtrpv2.c
 new file mode 100644
-index 0000000..a09da40
+index 0000000..f294dc6
 --- /dev/null
 +++ b/net/mptcp/mptcp_cmtrpv2.c
-@@ -0,0 +1,240 @@
+@@ -0,0 +1,247 @@
 +/*
 + *	MPTCP implementation - Concurrent Multipath Transfer / Resource Pooling version 2 (CMT/RPv2)
 + *
 + *	Current Maintainer & Author:
 + *	Denis Lugowski <denis.lugowski@haw-hamburg.de>
 + *
++ * For the algorithm design, see:
++ * Dreibholz, Thomas: "Evaluation and Optimisation of Multi-Path Transport using
++ * the Stream Control Transmission Protocol", Habilitation Treatise, University
++ * of Duisburg-Essen, Faculty of Economics, Institute for Computer Science and
++ * Business Information Systems, URN urn:nbn:de:hbz:464-20120315-103208-1,
++ * March 13, 2012
++ * URL: https://duepublico.uni-duisburg-essen.de/servlets/DerivateServlet/Derivate-29737/Dre2012_final.pdf
 + *
-+ *	This program is free software; you can redistribute it and/or
-+ *      modify it under the terms of the GNU General Public License
-+ *      as published by the Free Software Foundation; either version
-+ *      2 of the License, or (at your option) any later version.
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version
++ * 2 of the License, or (at your option) any later version.
 + */
 +#include <net/tcp.h>
 +#include <net/mptcp.h>
@@ -8023,7 +8038,6 @@ index 0000000..a09da40
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("MPTCP CMT/RPv2");
 +MODULE_VERSION("0.1");
-\ No newline at end of file
 diff --git a/net/mptcp/mptcp_coupled.c b/net/mptcp/mptcp_coupled.c
 new file mode 100644
 index 0000000..5d76116
