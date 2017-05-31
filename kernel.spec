@@ -40,19 +40,19 @@ Summary: The Linux kernel
 # For non-released -rc kernels, this will be appended after the rcX and
 # gitX tags, so a 3 here would become part of release "0.rcX.gitX.3"
 #
-%global baserelease 889
+%global baserelease 800
 %global fedora_build %{baserelease}
 
 # base_sublevel is the kernel version we're starting with and patching
 # on top of -- for example, 3.1-rc7-git1 starts with a 3.0 base,
 # which yields a base_sublevel of 0.
-%define base_sublevel 1
+%define base_sublevel 4
 
 ## If this is a released kernel ##
 %if 0%{?released_kernel}
 
 # Do we have a -stable update to apply?
-%define stable_update 39
+%define stable_update 70
 # Set rpm version accordingly
 %if 0%{?stable_update}
 %define stablerev %{stable_update}
@@ -267,7 +267,7 @@ Summary: The Linux kernel
 %define all_arch_configs kernel-%{version}-ppc64*.config
 %endif
 %ifarch ppc64le
-%define all_arch_configs kernel-%{version}-ppc64le.config
+%define all_arch_configs kernel-%{version}-ppc64le*.config
 %endif
 %endif
 
@@ -341,13 +341,13 @@ Summary: The Linux kernel
 %endif
 
 # Architectures we build tools/cpupower on
-%define cpupowerarchs %{ix86} x86_64 %{power64} %{arm} aarch64
+%define cpupowerarchs %{ix86} x86_64 %{power64} %{arm} aarch64 
 
 #
 # Packages that need to be installed before the kernel is, because the %%post
 # scripts use them.
 #
-%define kernel_prereq  fileutils, systemd >= 203-2
+%define kernel_prereq  fileutils, systemd >= 203-2, /usr/bin/kernel-install
 %define initrd_prereq  dracut >= 027
 
 
@@ -378,7 +378,7 @@ BuildRequires: net-tools, hostname, bc
 BuildRequires: sparse
 %endif
 %if %{with_perf}
-BuildRequires: elfutils-devel zlib-devel binutils-devel newt-devel python-devel perl(ExtUtils::Embed) bison flex
+BuildRequires: elfutils-devel zlib-devel binutils-devel newt-devel python-devel perl(ExtUtils::Embed) bison flex xz-devel
 BuildRequires: audit-libs-devel
 %ifnarch s390 s390x %{arm}
 BuildRequires: numactl-devel
@@ -393,8 +393,12 @@ BuildRequires: rpm-build, elfutils
 %define debuginfo_args --strict-build-id -r
 %endif
 
+%ifarch %{ix86} x86_64
+# MODULE_SIG is enabled in config-x86-generic and needs these:
+BuildRequires: openssl openssl-devel
+%endif
+
 %if %{signmodules}
-BuildRequires: openssl
 BuildRequires: pesign >= 0.10-4
 %endif
 
@@ -436,7 +440,7 @@ Source32: config-x86-32-generic
 
 Source40: config-x86_64-generic
 
-Source50: config-powerpc-generic
+Source50: config-powerpc64-generic
 Source53: config-powerpc64
 Source54: config-powerpc64p7
 Source55: config-powerpc64le
@@ -474,7 +478,7 @@ Patch00: %{stable_patch_00}
 # near the top of this spec file.
 %else
 %if 0%{?rcrev}
-Patch00 patch-4.%{upstream_sublevel}-rc%{rcrev}.xz
+Patch00: patch-4.%{upstream_sublevel}-rc%{rcrev}.xz
 %if 0%{?gitrev}
 Patch01: patch-4.%{upstream_sublevel}-rc%{rcrev}-git%{gitrev}.xz
 %endif
@@ -488,7 +492,7 @@ Patch00: patch-4.%{base_sublevel}-git%{gitrev}.xz
 
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
-Patch02: 0001-MPTCP-v0.91-with-socketoptions-against-v4.1.39.patch
+Patch02: 0001-MPTCP-v0.92-with-socketoptions-against-v4.4.70.patch
 # ###### NorNet Kernel ######
 
 # build tweak for build ID magic, even for -vanilla
@@ -501,172 +505,157 @@ Patch05: kbuild-AFTER_LINK.patch
 
 # Standalone patches
 
-Patch450: input-kill-stupid-messages.patch
-Patch452: no-pcspkr-modalias.patch
+Patch451: lib-cpumask-Make-CPUMASK_OFFSTACK-usable-without-deb.patch
 
-Patch470: die-floppy-die.patch
+Patch454: arm64-avoid-needing-console-to-enable-serial-console.patch
 
-Patch500: Revert-Revert-ACPI-video-change-acpi-video-brightnes.patch
+Patch456: arm64-acpi-drop-expert-patch.patch
 
-Patch510: input-silence-i8042-noise.patch
-Patch530: silence-fbcon-logo.patch
+Patch457: ARM-tegra-usb-no-reset.patch
 
-Patch600: lib-cpumask-Make-CPUMASK_OFFSTACK-usable-without-deb.patch
+Patch460: mfd-wm8994-Ensure-that-the-whole-MFD-is-built-into-a.patch
 
-#rhbz 1126580
-Patch601: Kbuild-Add-an-option-to-enable-GCC-VTA.patch
+Patch463: arm-i.MX6-Utilite-device-dtb.patch
 
-Patch800: crash-driver.patch
+Patch466: input-kill-stupid-messages.patch
 
-# crypto/
+Patch467: die-floppy-die.patch
 
-# secure boot
-Patch1000: Add-secure_modules-call.patch
-Patch1001: PCI-Lock-down-BAR-access-when-module-security-is-ena.patch
-Patch1002: x86-Lock-down-IO-port-access-when-module-security-is.patch
-Patch1003: ACPI-Limit-access-to-custom_method.patch
-Patch1004: asus-wmi-Restrict-debugfs-interface-when-module-load.patch
-Patch1005: Restrict-dev-mem-and-dev-kmem-when-module-loading-is.patch
-Patch1006: acpi-Ignore-acpi_rsdp-kernel-parameter-when-module-l.patch
-Patch1007: kexec-Disable-at-runtime-if-the-kernel-enforces-modu.patch
-Patch1008: x86-Restrict-MSR-access-when-module-loading-is-restr.patch
-Patch1009: Add-option-to-automatically-enforce-module-signature.patch
-Patch1010: efi-Disable-secure-boot-if-shim-is-in-insecure-mode.patch
-Patch1011: efi-Make-EFI_SECURE_BOOT_SIG_ENFORCE-depend-on-EFI.patch
-Patch1012: efi-Add-EFI_SECURE_BOOT-bit.patch
-Patch1013: hibernate-Disable-in-a-signed-modules-environment.patch
+Patch468: no-pcspkr-modalias.patch
 
-Patch1014: Add-EFI-signature-data-types.patch
-Patch1015: Add-an-EFI-signature-blob-parser-and-key-loader.patch
-Patch1016: KEYS-Add-a-system-blacklist-keyring.patch
-Patch1017: MODSIGN-Import-certificates-from-UEFI-Secure-Boot.patch
-Patch1018: MODSIGN-Support-not-importing-certs-from-db.patch
+Patch470: silence-fbcon-logo.patch
 
-Patch1019: Add-sysrq-option-to-disable-secure-boot-mode.patch
+Patch471: Kbuild-Add-an-option-to-enable-GCC-VTA.patch
 
-# esrt
-Patch1020: efi-Add-esrt-support.patch
+Patch472: crash-driver.patch
 
-# virt + ksm patches
+Patch473: Add-secure_modules-call.patch
 
-# DRM
+Patch474: PCI-Lock-down-BAR-access-when-module-security-is-ena.patch
 
-# nouveau + drm fixes
-# intel drm is all merged upstream
-Patch1826: drm-i915-hush-check-crtc-state.patch
+Patch475: x86-Lock-down-IO-port-access-when-module-security-is.patch
 
-# Quiet boot fixes
+Patch476: ACPI-Limit-access-to-custom_method.patch
 
-# fs fixes
+Patch477: asus-wmi-Restrict-debugfs-interface-when-module-load.patch
 
-# NFSv4
+Patch478: Restrict-dev-mem-and-dev-kmem-when-module-loading-is.patch
 
-# patches headed upstream
-Patch12016: disable-i8042-check-on-apple-mac.patch
+Patch479: acpi-Ignore-acpi_rsdp-kernel-parameter-when-module-l.patch
 
-Patch14010: lis3-improve-handling-of-null-rate.patch
+Patch480: kexec-Disable-at-runtime-if-the-kernel-enforces-modu.patch
 
-Patch15000: watchdog-Disable-watchdog-on-virtual-machines.patch
+Patch481: x86-Restrict-MSR-access-when-module-loading-is-restr.patch
 
-# PPC
+Patch482: Add-option-to-automatically-enforce-module-signature.patch
 
-# ARM64
-Patch16000: amd-xgbe-a0-Add-support-for-XGBE-on-A0.patch
-Patch16001: amd-xgbe-phy-a0-Add-support-for-XGBE-PHY-on-A0.patch
-Patch16002: arm64-avoid-needing-console-to-enable-serial-console.patch
-Patch16003: usb-make-xhci-platform-driver-use-64-bit-or-32-bit-D.patch
+Patch483: efi-Disable-secure-boot-if-shim-is-in-insecure-mode.patch
 
-# ARMv7
-Patch16020: ARM-tegra-usb-no-reset.patch
-Patch16021: arm-dts-am335x-boneblack-lcdc-add-panel-info.patch
-Patch16022: arm-dts-am335x-boneblack-add-cpu0-opp-points.patch
-Patch16023: arm-dts-am335x-bone-common-enable-and-use-i2c2.patch
-Patch16024: arm-dts-am335x-bone-common-setup-default-pinmux-http.patch
-Patch16025: arm-dts-am335x-bone-common-add-uart2_pins-uart4_pins.patch
-Patch16026: pinctrl-pinctrl-single-must-be-initialized-early.patch
+Patch484: efi-Make-EFI_SECURE_BOOT_SIG_ENFORCE-depend-on-EFI.patch
 
-Patch16028: arm-i.MX6-Utilite-device-dtb.patch
+Patch485: efi-Add-EFI_SECURE_BOOT-bit.patch
 
-Patch16030: arm-highbank-l2-reverts.patch
+Patch486: hibernate-Disable-in-a-signed-modules-environment.patch
 
-#rhbz 754518
-Patch21235: scsi-sd_revalidate_disk-prevent-NULL-ptr-deref.patch
+Patch487: Add-EFI-signature-data-types.patch
 
-# https://fedoraproject.org/wiki/Features/Checkpoint_Restore
-Patch21242: criu-no-expert.patch
+Patch488: Add-an-EFI-signature-blob-parser-and-key-loader.patch
 
-#rhbz 892811
-Patch21247: ath9k-rx-dma-stop-check.patch
+Patch489: KEYS-Add-a-system-blacklist-keyring.patch
 
-#CVE-2015-2150 rhbz 1196266 1200397
-Patch26175: xen-pciback-Don-t-disable-PCI_COMMAND-on-PCI-device-.patch
+Patch490: MODSIGN-Import-certificates-from-UEFI-Secure-Boot.patch
 
-#rhbz 1212230
-Patch26176: Input-synaptics-pin-3-touches-when-the-firmware-repo.patch
+Patch491: MODSIGN-Support-not-importing-certs-from-db.patch
 
-Patch26203: v4l-uvcvideo-Fix-incorrect-bandwidth-with-Chicony-de.patch
+Patch492: Add-sysrq-option-to-disable-secure-boot-mode.patch
 
-#rhbz 1217249
-Patch26214: acpi_video-Add-enable_native_backlight-quirk-for-Mac.patch
+Patch493: drm-i915-hush-check-crtc-state.patch
 
-#rhbz 1225563
-Patch26215: HID-lenovo-set-INPUT_PROP_POINTING_STICK.patch
+Patch494: disable-i8042-check-on-apple-mac.patch
 
-#rhbz 1133378
-Patch26219: firmware-Drop-WARN-from-usermodehelper_read_trylock-.patch
+Patch495: lis3-improve-handling-of-null-rate.patch
 
-#rhbz 1226743
-Patch26221: drm-i915-turn-off-wc-mmaps.patch
+Patch496: watchdog-Disable-watchdog-on-virtual-machines.patch
 
-# rhbz 1227891
-Patch26250: HID-rmi-Disable-populating-F30-when-the-touchpad-has.patch
+Patch497: scsi-sd_revalidate_disk-prevent-NULL-ptr-deref.patch
 
-# rhbz 1192270
-Patch26251: ideapad_laptop-Lenovo-G50-30-fix-rfkill-reports-wire.patch
+Patch498: criu-no-expert.patch
 
-# rhbz 1180920 1206724
-Patch26252: pcmcia-fix-a-boot-time-warning-in-pcmcia-cs-code.patch
+Patch499: ath9k-rx-dma-stop-check.patch
 
-#rhbz 1244511
-Patch507: HID-chicony-Add-support-for-Acer-Aspire-Switch-12.patch
+Patch500: xen-pciback-Don-t-disable-PCI_COMMAND-on-PCI-device-.patch
 
-#rhbz 1239050
-Patch509: ideapad-laptop-Add-Lenovo-Yoga-3-14-to-no_hw_rfkill-.patch
+Patch501: Input-synaptics-pin-3-touches-when-the-firmware-repo.patch
 
-#rhbz 1253789
-Patch511: iSCSI-let-session-recovery_tmo-sysfs-writes-persist.patch
+Patch502: firmware-Drop-WARN-from-usermodehelper_read_trylock-.patch
 
-#CVE-2015-6666 rhbz 1256746 1256753
-Patch513: Revert-sched-x86_64-Don-t-save-flags-on-context-swit.patch
+Patch503: drm-i915-turn-off-wc-mmaps.patch
 
-#rhbz 1256281
-Patch26265: mmc-sdhci-fix-dma-memory-leak-in-sdhci_pre_req.patch
+Patch508: kexec-uefi-copy-secure_boot-flag-in-boot-params.patch
 
-#rhbz 1257534
-Patch515: nv46-Change-mc-subdev-oclass-from-nv44-to-nv4c.patch
+#rhbz 1287819
+Patch570: HID-multitouch-enable-palm-rejection-if-device-imple.patch
 
-#rhbz 1257500
-Patch517: vmwgfx-Rework-device-initialization.patch
-Patch518: drm-vmwgfx-Allow-dropped-masters-render-node-like-ac.patch
+#rhbz 1288687
+Patch572: alua_fix.patch
 
-#CVE-2015-6937 rhbz 1263139 1263140
-Patch523: RDS-verify-the-underlying-transport-exists-before-cr.patch
+#rhbz 1083853
+Patch610: PNP-Add-Broadwell-to-Intel-MCH-size-workaround.patch
 
-#rhbz 1263762
-Patch526: 0001-x86-cpu-cacheinfo-Fix-teardown-path.patch
+#rhbz 1300955
+Patch640: PNP-Add-Haswell-ULT-to-Intel-MCH-size-workaround.patch
 
-#CVE-2015-5257 rhbz 1265607 1265612
-Patch527: USB-whiteheat-fix-potential-null-deref-at-probe.patch
+#rhbz 1278942
+Patch643: media-ivtv-avoid-going-past-input-audio-array.patch
 
-#CVE-2015-2925 rhbz 1209367 1209373
-Patch528: dcache-Handle-escaped-paths-in-prepend_path.patch
-Patch529: vfs-Test-for-and-handle-paths-that-are-unreachable-f.patch
+#rhbz 1255325
+Patch646: HID-sony-do-not-bail-out-when-the-sixaxis-refuses-th.patch
 
-#CVE-2015-7613 rhbz 1268270 1268273
-Patch532: Initialize-msg-shm-IPC-objects-before-doing-ipc_addi.patch
+#Known use after free, possibly rhbz 1310579
+Patch654: 0001-usb-hub-fix-panic-in-usb_reset_and_verify_device.patch
+
+#rhbz 1310252 1313318
+Patch660: 0001-drm-i915-Pretend-cursor-is-always-on-for-ILK-style-W.patch
+
+#CVE-2016-3135 rhbz 1317386 1317387
+Patch664: netfilter-x_tables-check-for-size-overflow.patch
+
+#CVE-2016-3134 rhbz 1317383 1317384
+Patch665: netfilter-x_tables-deal-with-bogus-nextoffset-values.patch
+
+# CVE-2016-3672 rhbz 1324749 1324750
+Patch690: x86-mm-32-Enable-full-randomization-on-i386-and-X86_.patch
+
+#CVE-2016-3951 rhbz 1324782 1324815
+Patch695: cdc_ncm-do-not-call-usbnet_link_change-from-cdc_ncm_.patch
+
+# Stop splashing crap about broken firmware BGRT
+Patch704: x86-efi-bgrt-Switch-all-pr_err-to-pr_debug-for-inval.patch
+
+#CVE-2016-4482 rhbz 1332931 1332932
+Patch705: USB-usbfs-fix-potential-infoleak-in-devio.patch
+
+#CVE-2016-4569 rhbz 1334643 1334645
+Patch714: ALSA-timer-Fix-leak-in-SNDRV_TIMER_IOCTL_PARAMS.patch
+Patch715: ALSA-timer-Fix-leak-in-events-via-snd_timer_user_cca.patch
+Patch716: ALSA-timer-Fix-leak-in-events-via-snd_timer_user_tin.patch
+
+#CVE-2016-0758 rhbz 1300257 1335386
+Patch717: KEYS-Fix-ASN.1-indefinite-length-object-parsing.patch
+
+#CVE-2016-5243 rhbz 1343338 1343335
+Patch721: tipc-fix-an-infoleak-in-tipc_nl_compat_link_dump.patch
+
+#CVE-2016-5244 rhbz 1343338 1343337
+Patch722: rds-fix-an-infoleak-in-rds_inc_info_copy.txt
+
+#CVE-2016-4470 rhbz 1341716 1346626
+Patch727: KEYS-potential-uninitialized-variable.patch
+
+#rhbz 1338025
+Patch728: hp-wmi-fix-wifi-cannot-be-hard-unblock.patch
 
 # END OF PATCH DEFINITIONS
-
 %endif
 
 BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
@@ -691,6 +680,7 @@ Provides: kernel-uname-r = %{KVERREL}%{?variant}%{?1:+%{1}}\
 Requires(pre): %{kernel_prereq}\
 Requires(pre): %{initrd_prereq}\
 Requires(preun): systemd >= 200\
+Conflicts: xfsprogs < 4.3.0-1\
 Conflicts: xorg-x11-drv-vmmouse < 13.0.99\
 %{expand:%%{?kernel%{?1:_%{1}}_conflicts:Conflicts: %%{kernel%{?1:_%{1}}_conflicts}}}\
 %{expand:%%{?kernel%{?1:_%{1}}_obsoletes:Obsoletes: %%{kernel%{?1:_%{1}}_obsoletes}}}\
@@ -707,7 +697,7 @@ AutoProv: yes\
 # define variant -nornet
 %define buildid .nornet
 # !!! NOTE: This skips all Fedora-provided patches! !!!
-# !!! Since latest Fedora kernel is 4.1.10, and this is 4.1.24, everything
+# !!! Since latest Fedora kernel is 4.4.14, and this is 4.4.70, everything
 # !!! relevant should be upstream already => no need to handle Fedora patches.
 %define nopatches 1
 # !!! NOTE: Do not complain about new options!
@@ -1009,7 +999,7 @@ on kernel bugs, as some of these options impact performance noticably.
 # And finally the main -core package
 
 %define variant_summary The Linux kernel
-%kernel_variant_package
+%kernel_variant_package 
 %description core
 The kernel package contains the Linux kernel (vmlinuz), the core of any
 Linux operating system.  The kernel handles the basic functions
@@ -1240,7 +1230,7 @@ done
 %endif
 
 # ###### NorNet Kernel ######
-ApplyPatch 0001-MPTCP-v0.91-with-socketoptions-against-v4.1.39.patch
+ApplyPatch 0001-MPTCP-v0.92-with-socketoptions-against-v4.4.70.patch
 # ###### NorNet Kernel ######
 
 ApplyPatch kbuild-AFTER_LINK.patch
@@ -1248,219 +1238,152 @@ ApplyPatch kbuild-AFTER_LINK.patch
 
 %if !%{nopatches}
 
-# Architecture patches
-# x86(-64)
 ApplyPatch lib-cpumask-Make-CPUMASK_OFFSTACK-usable-without-deb.patch
 
-# PPC
-
-# ARM64
-ApplyPatch amd-xgbe-a0-Add-support-for-XGBE-on-A0.patch
-ApplyPatch amd-xgbe-phy-a0-Add-support-for-XGBE-PHY-on-A0.patch
 ApplyPatch arm64-avoid-needing-console-to-enable-serial-console.patch
-ApplyPatch usb-make-xhci-platform-driver-use-64-bit-or-32-bit-D.patch
 
-#
-# ARM
-#
+ApplyPatch arm64-acpi-drop-expert-patch.patch
+
 ApplyPatch ARM-tegra-usb-no-reset.patch
 
-ApplyPatch arm-dts-am335x-boneblack-lcdc-add-panel-info.patch
-ApplyPatch arm-dts-am335x-boneblack-add-cpu0-opp-points.patch
-ApplyPatch arm-dts-am335x-bone-common-enable-and-use-i2c2.patch
-ApplyPatch arm-dts-am335x-bone-common-setup-default-pinmux-http.patch
-ApplyPatch arm-dts-am335x-bone-common-add-uart2_pins-uart4_pins.patch
-ApplyPatch pinctrl-pinctrl-single-must-be-initialized-early.patch
+ApplyPatch mfd-wm8994-Ensure-that-the-whole-MFD-is-built-into-a.patch
 
 ApplyPatch arm-i.MX6-Utilite-device-dtb.patch
 
-ApplyPatch arm-highbank-l2-reverts.patch
-
-#
-# bugfixes to drivers and filesystems
-#
-
-# ext4
-
-# xfs
-
-# btrfs
-
-# eCryptfs
-
-# NFSv4
-
-# USB
-
-# WMI
-
-# ACPI
-
-#
-# PCI
-#
-
-#
-# SCSI Bits.
-#
-
-# ACPI
-
-ApplyPatch Revert-Revert-ACPI-video-change-acpi-video-brightnes.patch
-
-# ALSA
-
-# Networking
-
-# Misc fixes
-# The input layer spews crap no-one cares about.
 ApplyPatch input-kill-stupid-messages.patch
 
-# stop floppy.ko from autoloading during udev...
 ApplyPatch die-floppy-die.patch
 
 ApplyPatch no-pcspkr-modalias.patch
 
-# Silence some useless messages that still get printed with 'quiet'
-ApplyPatch input-silence-i8042-noise.patch
-
-# Make fbcon not show the penguins with 'quiet'
 ApplyPatch silence-fbcon-logo.patch
 
-# Changes to upstream defaults.
-#rhbz 1126580
 ApplyPatch Kbuild-Add-an-option-to-enable-GCC-VTA.patch
 
-# /dev/crash driver.
 ApplyPatch crash-driver.patch
 
-# crypto/
-
-# secure boot
 ApplyPatch Add-secure_modules-call.patch
+
 ApplyPatch PCI-Lock-down-BAR-access-when-module-security-is-ena.patch
+
 ApplyPatch x86-Lock-down-IO-port-access-when-module-security-is.patch
+
 ApplyPatch ACPI-Limit-access-to-custom_method.patch
+
 ApplyPatch asus-wmi-Restrict-debugfs-interface-when-module-load.patch
+
 ApplyPatch Restrict-dev-mem-and-dev-kmem-when-module-loading-is.patch
+
 ApplyPatch acpi-Ignore-acpi_rsdp-kernel-parameter-when-module-l.patch
+
 ApplyPatch kexec-Disable-at-runtime-if-the-kernel-enforces-modu.patch
+
 ApplyPatch x86-Restrict-MSR-access-when-module-loading-is-restr.patch
+
 ApplyPatch Add-option-to-automatically-enforce-module-signature.patch
+
 ApplyPatch efi-Disable-secure-boot-if-shim-is-in-insecure-mode.patch
+
 ApplyPatch efi-Make-EFI_SECURE_BOOT_SIG_ENFORCE-depend-on-EFI.patch
+
 ApplyPatch efi-Add-EFI_SECURE_BOOT-bit.patch
+
 ApplyPatch hibernate-Disable-in-a-signed-modules-environment.patch
 
 ApplyPatch Add-EFI-signature-data-types.patch
+
 ApplyPatch Add-an-EFI-signature-blob-parser-and-key-loader.patch
+
 ApplyPatch KEYS-Add-a-system-blacklist-keyring.patch
+
 ApplyPatch MODSIGN-Import-certificates-from-UEFI-Secure-Boot.patch
+
 ApplyPatch MODSIGN-Support-not-importing-certs-from-db.patch
 
 ApplyPatch Add-sysrq-option-to-disable-secure-boot-mode.patch
 
-ApplyPatch efi-Add-esrt-support.patch
-
-# Assorted Virt Fixes
-
-# DRM core
-
-# Nouveau DRM
-
-# Intel DRM
 ApplyPatch drm-i915-hush-check-crtc-state.patch
 
-# Radeon DRM
-
-# Patches headed upstream
 ApplyPatch disable-i8042-check-on-apple-mac.patch
 
 ApplyPatch lis3-improve-handling-of-null-rate.patch
 
-# Disable watchdog on virtual machines.
 ApplyPatch watchdog-Disable-watchdog-on-virtual-machines.patch
 
-#rhbz 754518
 ApplyPatch scsi-sd_revalidate_disk-prevent-NULL-ptr-deref.patch
 
-# https://fedoraproject.org/wiki/Features/Checkpoint_Restore
 ApplyPatch criu-no-expert.patch
 
-#rhbz 892811
 ApplyPatch ath9k-rx-dma-stop-check.patch
 
-#CVE-2015-2150 rhbz 1196266 1200397
 ApplyPatch xen-pciback-Don-t-disable-PCI_COMMAND-on-PCI-device-.patch
 
-#rhbz 1212230
 ApplyPatch Input-synaptics-pin-3-touches-when-the-firmware-repo.patch
 
-ApplyPatch v4l-uvcvideo-Fix-incorrect-bandwidth-with-Chicony-de.patch
-
-#rhbz 1217249
-ApplyPatch acpi_video-Add-enable_native_backlight-quirk-for-Mac.patch
-
-#rhbz 1225563
-ApplyPatch HID-lenovo-set-INPUT_PROP_POINTING_STICK.patch
-
-#rhbz 1133378
 ApplyPatch firmware-Drop-WARN-from-usermodehelper_read_trylock-.patch
 
-#rhbz 1226743
 ApplyPatch drm-i915-turn-off-wc-mmaps.patch
 
-#rhbz 1212230
-# pplyPatch Input-Revert-Revert-synaptics-use-dmax-in-input_mt_a.patch
-# pplyPatch Input-synaptics-allocate-3-slots-to-keep-stability-i.patch
-# pplyPatch Input-synaptics-pin-3-touches-when-the-firmware-repo.patch
+ApplyPatch kexec-uefi-copy-secure_boot-flag-in-boot-params.patch
 
-#rhbz 1227891
-ApplyPatch HID-rmi-Disable-populating-F30-when-the-touchpad-has.patch
+#rhbz 1287819
+ApplyPatch HID-multitouch-enable-palm-rejection-if-device-imple.patch
 
-# rhbz 1192270
-ApplyPatch ideapad_laptop-Lenovo-G50-30-fix-rfkill-reports-wire.patch
+#rhbz 1288687
+ApplyPatch alua_fix.patch
 
-# rhbz 1180920 1206724
-ApplyPatch pcmcia-fix-a-boot-time-warning-in-pcmcia-cs-code.patch
+#rhbz 1083853
+ApplyPatch PNP-Add-Broadwell-to-Intel-MCH-size-workaround.patch
 
-#rhbz 1244511
-ApplyPatch HID-chicony-Add-support-for-Acer-Aspire-Switch-12.patch
+#rhbz 1300955
+ApplyPatch PNP-Add-Haswell-ULT-to-Intel-MCH-size-workaround.patch
 
-#rhbz 1239050
-ApplyPatch ideapad-laptop-Add-Lenovo-Yoga-3-14-to-no_hw_rfkill-.patch
+#rhbz 1278942
+ApplyPatch media-ivtv-avoid-going-past-input-audio-array.patch
 
-#rhbz 1253789
-ApplyPatch iSCSI-let-session-recovery_tmo-sysfs-writes-persist.patch
+#rhbz 1255325
+ApplyPatch HID-sony-do-not-bail-out-when-the-sixaxis-refuses-th.patch
 
-#CVE-2015-6666 rhbz 1256746 1256753
-ApplyPatch Revert-sched-x86_64-Don-t-save-flags-on-context-swit.patch
+#Known use after free, possibly rhbz 1310579
+ApplyPatch 0001-usb-hub-fix-panic-in-usb_reset_and_verify_device.patch
 
-#rhbz 1256281
-ApplyPatch mmc-sdhci-fix-dma-memory-leak-in-sdhci_pre_req.patch
+#rhbz 1310252 1313318
+ApplyPatch 0001-drm-i915-Pretend-cursor-is-always-on-for-ILK-style-W.patch
 
-#rhbz 1257534
-ApplyPatch nv46-Change-mc-subdev-oclass-from-nv44-to-nv4c.patch
+#CVE-2016-3135 rhbz 1317386 1317387
+ApplyPatch netfilter-x_tables-check-for-size-overflow.patch
 
-#rhbz 1257500
-ApplyPatch vmwgfx-Rework-device-initialization.patch
-ApplyPatch drm-vmwgfx-Allow-dropped-masters-render-node-like-ac.patch
+#CVE-2016-3134 rhbz 1317383 1317384
+ApplyPatch netfilter-x_tables-deal-with-bogus-nextoffset-values.patch
 
-#CVE-2015-6937 rhbz 1263139 1263140
-ApplyPatch RDS-verify-the-underlying-transport-exists-before-cr.patch
+# CVE-2016-3672 rhbz 1324749 1324750
+ApplyPatch x86-mm-32-Enable-full-randomization-on-i386-and-X86_.patch
 
-#rhbz 1263762
-ApplyPatch 0001-x86-cpu-cacheinfo-Fix-teardown-path.patch
+#CVE-2016-3951 rhbz 1324782 1324815
+ApplyPatch cdc_ncm-do-not-call-usbnet_link_change-from-cdc_ncm_.patch
 
-#CVE-2015-5257 rhbz 1265607 1265612
-ApplyPatch USB-whiteheat-fix-potential-null-deref-at-probe.patch
+#CVE-2016-4482 rhbz 1332931 1332932
+ApplyPatch USB-usbfs-fix-potential-infoleak-in-devio.patch
 
-#CVE-2015-2925 rhbz 1209367 1209373
-ApplyPatch dcache-Handle-escaped-paths-in-prepend_path.patch
-ApplyPatch vfs-Test-for-and-handle-paths-that-are-unreachable-f.patch
+#CVE-2016-4569 rhbz 1334643 1334645
+ApplyPatch ALSA-timer-Fix-leak-in-SNDRV_TIMER_IOCTL_PARAMS.patch
+ApplyPatch ALSA-timer-Fix-leak-in-events-via-snd_timer_user_cca.patch
+ApplyPatch ALSA-timer-Fix-leak-in-events-via-snd_timer_user_tin.patch
 
-#CVE-2015-7613 rhbz 1268270 1268273
-ApplyPatch Initialize-msg-shm-IPC-objects-before-doing-ipc_addi.patch
+#CVE-2016-0758 rhbz 1300257 1335386
+ApplyPatch KEYS-Fix-ASN.1-indefinite-length-object-parsing.patch
+
+#CVE-2016-5243 rhbz 1343338 1343335
+ApplyPatch tipc-fix-an-infoleak-in-tipc_nl_compat_link_dump.patch
+
+#CVE-2016-5244 rhbz 1343338 1343337
+ApplyPatch rds-fix-an-infoleak-in-rds_inc_info_copy.txt
+
+#CVE-2016-4470 rhbz 1341716 1346626
+ApplyPatch KEYS-potential-uninitialized-variable.patch
+
+#rhbz 1338025
+ApplyPatch hp-wmi-fix-wifi-cannot-be-hard-unblock.patch
 
 # END OF PATCH APPLICATIONS
 
@@ -1581,10 +1504,8 @@ BuildKernel() {
     cp configs/$Config .config
 
     %if %{signmodules}
-    cp %{SOURCE11} .
+    cp %{SOURCE11} certs/.
     %endif
-
-    chmod +x scripts/sign-file
 
     Arch=`head -1 .config | cut -b 3-`
     echo USING ARCH=$Arch
@@ -1821,8 +1742,8 @@ BuildKernel() {
 
 %if %{signmodules}
     # Save the signing keys so we can sign the modules in __modsign_install_post
-    cp signing_key.priv signing_key.priv.sign${Flav}
-    cp signing_key.x509 signing_key.x509.sign${Flav}
+    cp certs/signing_key.pem certs/signing_key.pem.sign${Flav}
+    cp certs/signing_key.x509 certs/signing_key.x509.sign${Flav}
 %endif
 
     # Move the devel headers out of the root file system
@@ -1917,16 +1838,16 @@ popd
 %define __modsign_install_post \
   if [ "%{signmodules}" -eq "1" ]; then \
     if [ "%{with_pae}" -ne "0" ]; then \
-      %{modsign_cmd} signing_key.priv.sign+%{pae} signing_key.x509.sign+%{pae} $RPM_BUILD_ROOT/lib/modules/%{KVERREL}+%{pae}/ \
+      %{modsign_cmd} certs/signing_key.pem.sign+%{pae} certs/signing_key.x509.sign+%{pae} $RPM_BUILD_ROOT/lib/modules/%{KVERREL}+%{pae}/ \
     fi \
     if [ "%{with_debug}" -ne "0" ]; then \
-      %{modsign_cmd} signing_key.priv.sign+debug signing_key.x509.sign+debug $RPM_BUILD_ROOT/lib/modules/%{KVERREL}+debug/ \
+      %{modsign_cmd} certs/signing_key.pem.sign+debug certs/signing_key.x509.sign+debug $RPM_BUILD_ROOT/lib/modules/%{KVERREL}+debug/ \
     fi \
     if [ "%{with_pae_debug}" -ne "0" ]; then \
-      %{modsign_cmd} signing_key.priv.sign+%{pae}debug signing_key.x509.sign+%{pae}debug $RPM_BUILD_ROOT/lib/modules/%{KVERREL}+%{pae}debug/ \
+      %{modsign_cmd} certs/signing_key.pem.sign+%{pae}debug certs/signing_key.x509.sign+%{pae}debug $RPM_BUILD_ROOT/lib/modules/%{KVERREL}+%{pae}debug/ \
     fi \
     if [ "%{with_up}" -ne "0" ]; then \
-      %{modsign_cmd} signing_key.priv.sign signing_key.x509.sign $RPM_BUILD_ROOT/lib/modules/%{KVERREL}/ \
+      %{modsign_cmd} certs/signing_key.pem.sign certs/signing_key.x509.sign $RPM_BUILD_ROOT/lib/modules/%{KVERREL}/ \
     fi \
   fi \
   if [ "%{zipmodules}" -eq "1" ]; then \
@@ -2058,10 +1979,10 @@ rm -rf $RPM_BUILD_ROOT
 ###
 
 %if %{with_tools}
-%post -n kernel-tools-libs
+%post -n kernel-tools
 /sbin/ldconfig
 
-%postun -n kernel-tools-libs
+%postun -n kernel-tools
 /sbin/ldconfig
 %endif
 
@@ -2187,6 +2108,7 @@ fi
 %dir %{_libdir}/traceevent/plugins
 %{_libdir}/traceevent/plugins/*
 %dir %{_libexecdir}/perf-core
+%{_datadir}/perf-core/*
 %{_libexecdir}/perf-core/*
 %{_mandir}/man[1-8]/perf*
 %{_sysconfdir}/bash_completion.d/perf
@@ -2310,10 +2232,370 @@ fi
 # plz don't put in a version string unless you're going to tag
 # and build.
 #
-#
+# 
 %changelog
-* Mon Oct 05 2015 Josh Boyer <jwboyer@fedoraproject.org>
+* Fri Jun 24 2016 Laura Abbott <labbott@fedoraproject.org> - 4.4.14-200
+- Linux v4.4.14
+
+* Wed Jun 15 2016 Laura Abbott <labbott@fedoraproject.org>
+- hp-wmi: fix wifi cannot be hard-unblock (rhbz 1338025)
+
+* Wed Jun 15 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-4470 keys: uninitialized variable crash (rhbz 1341716 1346626)
+
+* Mon Jun 13 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-1583 stack overflow via ecryptfs and /proc (rhbz 1344721 1344722)
+
+* Wed Jun 08 2016 Laura Abbott <labbott@fedoraproject.org> - 4.4.13-200
+- Linux v4.4.13
+
+* Tue Jun 07 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-5244 info leak in rds (rhbz 1343338 1343337)
+- CVE-2016-5243 info leak in tipc (rhbz 1343338 1343335)
+
+* Wed Jun 01 2016 Laura Abbott <labbott@fedoraproject.org> - 4.4.12-200
+- Linux v4.4.12
+
+* Mon May 23 2016 Laura Abbott <labbott@fedoraproject.org> - 4.4.11-200
+- Linux v4.4.11
+- Actually apply one patch
+
+* Mon May 23 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-4951 null ptr deref in tipc_nl_publ_dump (rhbz 1338625 1338626)
+
+* Thu May 19 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-4913 isofs: info leak with malformed NM entries (rhbz 1337528 1337529)
+
+* Mon May 16 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-3713 kvm: out-of-bounds access in set_var_mtrr_msr (rhbz 1332139 1336410)
+
+* Fri May 13 2016 Laura Abbott <labbott@fedoraproject.org> - 4.4.10-200
+- Linux v4.4.10
+
+* Fri May 13 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-0758 pointer corruption in asn1 decoder (rhbz 1300257 1335386)
+
+* Tue May 10 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-4569 info leak in sound module (rhbz 1334643 1334645)
+
+* Mon May 09 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-4557 bpf: Use after free vulnerability via double fdput
+  CVE-2016-4558 bpf: refcnt overflow (rhbz 1334307 1334303 1334311)
+
+* Fri May 06 2016 Laura Abbott <labbott@fedoraproject.org> - 4.4.9-200
+- Linux v4.4.9
+
+* Fri May 06 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Oops in propogate_mnt if first copy is slave (rhbz 1333712 1333713)
+
+* Thu May 05 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-4486 CVE-2016-4485 info leaks (rhbz 1333316 1333309 1333321)
+
+* Wed May 04 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-4482 info leak in devio.c (rhbz 1332931 1332932)
+
+* Fri Apr 29 2016 Peter Robinson <pbrobinson@fedoraproject.org>
+- Add patch to fix i.MX6 graphics
+
+* Thu Apr 28 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Don't splash warnings from broken BGRT firmware implementations
+- Require /usr/bin/kernel-install (rhbz 1331012)
+
+* Tue Apr 26 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Enable IEEE802154_AT86RF230 on more arches (rhbz 1330356)
+
+* Wed Apr 20 2016 Laura Abbott <labbott@fedoraproject.org> - 4.4.8-200
+- Linux v4.4.8
+- Allow antenna selection for rtl8723be (rhbz 1309487)
+
+* Tue Apr 19 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-3955 usbip: buffer overflow by trusting length of incoming packets  (rhbz 1328478 1328479)
+
+* Fri Apr 15 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-3961 xen: hugetlbfs use may crash PV guests (rhbz 1327219 1323956)
+
+* Wed Apr 13 2016 Laura Abbott <labbott@fedoraproject.org>
+- Fix for Skylake pstate issues (rhbz 1309980)
+
+* Tue Apr 12 2016 Laura Abbott <labbott@redhat.com> - 4.4.7-200
+- Linux v4.4.7
+
+* Tue Apr 12 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix Bamboo ONE issues (rhbz 1317116)
+
+* Mon Apr 11 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-3951 usbnet: crash on invalid USB descriptors (rhbz 1324782 1324815)
+- CVE-2015-8839 ext4: data corruption due to punch hole races (rhbz 1323577 1323579)
+
+* Thu Apr 07 2016 Justin M. Forbes <jforbes@fedoraproject.org>
+- Enable Full Randomization on 32bit x86 CVE-2016-3672 (rhbz 1324749 1324750)
+`
+* Thu Mar 31 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Add two more patches for CVE-2016-2184
+
+* Wed Mar 30 2016 Laura Abbott <labbott@redhat.com> - 4.4.6-201
+- Bump and build
+
+* Tue Mar 29 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-3157 xen: priv escalation on 64bit PV domains with io port access (rhbz 1315711 1321948)
+
+* Wed Mar 23 2016 Laura Abbott <labbott@fedoraproject.org>
+- drm/udl: Use unlocked gem unreferencing (rhbz 1295646)
+
+* Tue Mar 22 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-3136 mct_u232: oops on invalid USB descriptors (rhbz 1317007 1317010)
+- CVE-2016-2187 gtco: oops on invalid USB descriptors (rhbz 1317017 1317010)
+
+* Mon Mar 21 2016 Laura Abbott <labbott@fedoraproject.org>
+- uas: Limit qdepth at the scsi-host level (rhbz 1315013)
+- Fix for performance regression caused by thermal (rhbz 1317190)
+- Input: synaptics - handle spurious release of trackstick buttons, again (rhbz 1318079)
+
+* Fri Mar 18 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- ims-pcu: sanity checking on missing interfaces
+- CVE-2016-3140 digi_acceleport: oops on invalid USB descriptors (rhbz 1317010 1316995)
+- CVE-2016-3138 cdc_acm: oops on invalid USB descriptors (rhbz 1317010 1316204)
+- CVE-2016-2185 ati_remote2: oops on invalid USB descriptors (rhbz 1317014 1317471)
+- CVE-2016-2188 iowarrior: oops on invalid USB descriptors (rhbz 1317018 1317467)
+- CVE-2016-2186 powermate: oops on invalid USB descriptors (rhbz 1317015 1317464)
+- CVE-2016-3137 cypress_m8: oops on invalid USB descriptors (rhbz 1317010 1316996)
+- CVE-2016-2184 alsa: panic on invalid USB descriptors (rhbz 1317012 1317470)
+
+* Wed Mar 16 2016 Laura Abbott <labbott@redhat.com> - 4.4.6-200
+- Linux v4.4.6
+
+* Wed Mar 16 2016 Laura Abbott <labbott@redhat.com>
+- Revert patch causing radeon breakage (rhbz 1317300 1317179)
+
+* Wed Mar 16 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-3135 ipv4: DoS when destroying a network interface (rhbz 1318172 1318270)
+
+* Mon Mar 14 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-3134 netfilter: missing bounds check in ipt_entry struct (rhbz 1317383 1317384)
+- CVE-2016-3135 netfilter: size overflow in x_tables (rhbz 1317386 1317387)
+
+* Fri Mar 11 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Add patch for ICP DAS I-756xU devices (rhbz 1316136)
+
+* Thu Mar 10 2016 Laura Abbott <labbott@redhat.com>
+- cdc-acm: fix NULL pointer reference (rhbz 1316719)
+
+* Wed Mar 09 2016 Laura Abbott <labbott@redhat.com> - 4.4.5-200
+- Linux v4.4.5
+- Fix for known arm64 bootup issue
+
+* Fri Mar 04 2016 Laura Abbott <labbott@redhat.com> - 4.4.4-200
+- Require updated XFS utilities
+
+* Thu Mar 03 2016 Laura Abbott <labbott@redhat.com>
+- Linux v4.4.4
+- Switch back to not setting CONFIG_ACPI_REV_OVERRIDE_POSSIBLE
+
+* Thu Mar 03 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Partial SMAP bypass on 64-bit kernels (rhbz 1314253 1314255)
+
+* Wed Mar 02 2016 Laura Abbott <labbott@redhat.com>
+- Fix for flickering on Intel graphics (rhbz 1310252 1313318)
+
+* Wed Mar 02 2016 Laura Abbott <labbott@redhat.com>
+- Re-enable dropped CONFIG_ACPI_REV_OVERRIDE_POSSIBLE (rhbz 1313434)
+
+* Wed Mar 02 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- pipe: limit the per-user amount of pages allocated in pipes (rhbz 1313428 1313433)
+
+* Sat Feb 27 2016 Peter Robinson <pbrobinson@fedoraproject.org> 4.4.3-201
+- Bring missed 4.4 ARMv7 fixes from F-23 kernel
+- Fix deferred nouveau module loading on tegra
+
+* Fri Feb 26 2016 Laura Abbott <labbott@fedoraproject.org> - 4.4.3-200
+- Linux v4.4.3
+
+* Wed Feb 24 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-2550 af_unix: incorrect accounting on in-flight fds (rhbz 1311517 1311518)
+
+* Mon Feb 22 2016 Josh Boyer <jwboyer@fedoraproject.org> - 4.3.6-201
+- Revert broken usb patch
+
+* Sat Feb 20 2016 Josh Boyer <jwboyer@fedoraproject.org> - 4.3.6-200
+- Linux v4.3.6
+
+* Thu Feb 18 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-8812 cxgb3 use after free (rhbz 1303532 1309548)
+
+* Wed Feb 17 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Backport mgag200 cursor hang fix (rhbz 1305181 1299901)
+
+* Tue Feb 16 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Backport fix for elantech touchpads (rhbz 1306987)
+
+* Mon Feb 15 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-2383 incorrect branch fixups for eBPG allow arbitrary reads (rhbz 1308452 1308453)
+- CVE-2016-2384 double free in usb-audio from invalid USB descriptor (rhbz 1308444 1308445)
+
+* Tue Feb 09 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-0617 fix hugetlbfs inode.c issues (rhbz 1305803 1305804)
+
+* Tue Feb 02 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Backport patch to fix memory leak in rtlwifi USB devices (rhbz 1303270)
+
+* Sun Jan 31 2016 Josh Boyer <jwboyer@fedoraproject.org> - 4.3.5-200
+- Linux v4.3.5
+
+* Fri Jan 29 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Backport HID sony patch to fix some gamepads (rhbz 1255235)
+
+* Thu Jan 28 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix issues with ivtv driver on PVR350 devices (rhbz 1278942)
+- Add patches to fix suprious NEWLINK netlink messages (rhbz 1302037)
+
+* Mon Jan 25 2016 Josh Boyer <jwboyer@fedoraproject.org> - 4.3.4-200
+- Add patch to fix some Elan touchpads (rhbz 1296677)
+
+* Sat Jan 23 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Linux v4.3.4
+
+* Fri Jan 22 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix backtrace from PNP conflict on Haswell-ULT (rhbz 1300955)
+
+* Thu Jan 21 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-XXXX-XXXX missing null ptr check in nf_nat_redirect_ipv4 (rhbz 1300731 1300732)
+- Fix incorrect country code issue on RTL8812AE devices (rhbz 1279653)
+
+* Wed Jan 20 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2016-0723 memory disclosure and crash in tty layer (rhbz 1296253 1300224)
+- CVE-2013-4312 file descr passed over unix sockects not properly accounted (rhbz 1297813 1300216)
+
+* Tue Jan 19 2016 Josh Boyer <jwboyer@fedoraproject.org> - 4.3.3-200
+- Rebase to 4.3.y
+- Backport nouveau stable fixes (rhbz 1299349)
+- CVE-2016-0728 Keys: reference leak in join_session_keyring (rhbz 1296623 1297475)
+- Add currently queued networking stable patches
+- Add a couple btrfs patches cc'd to stable upstream
+- Add SCSI patches to avoid blacklist false positives (rhbz 1299810)
+
+* Fri Jan 15 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-8767 sctp: DoS during timeout (rhbz 1297389 1298437)
+
+* Tue Jan 12 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-7566 usb: visor: Crash on invalid USB dev descriptors (rhbz 1296466 1297517)
+- Fix backtrace from PNP conflict on Broadwell (rhbz 1083853)
+
+* Thu Jan 07 2016 Josh Boyer <jwboyer@fedorparoject.org>
+- CVE-2015-7513 kvm: divide by zero DoS (rhbz 1284847 1296142)
+
+* Tue Jan 05 2016 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-8709 ptrace: potential priv escalation with userns (rhbz 1295287 1295288)
+
+* Fri Dec 18 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-8575 information leak in sco_sock_bind (rhbz 1292840 1292841)
+
+* Thu Dec 17 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-8569 info leak from getsockname (rhbz 1292045 1292047)
+
+* Tue Dec 15 2015 Justin Forbes <jforbes@fedoraproject.org> - 4.2.8-200
+- Linux v4.2.8
+
+* Tue Dec 15 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-8543 ipv6: DoS via NULL pointer dereference (rhbz 1290475 1290477)
+
+* Mon Dec 14 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-7550 Race between read and revoke keys (rhbz 1291197 1291198)
+- CVE-XXXX-XXXX permission bypass on overlayfs (rhbz 1291329 1291332)
+
+* Fri Dec 11 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2013-7446 unix sockects use after free (rhbz 1282688 1282712)
+
+* Thu Dec 10 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix rfkill issues on ideapad Y700-17ISK (rhbz 1286293)
+
+* Wed Dec 09 2015 Justin Forbes <jforbes@fedoraproject.org> - 4.2.7-200
+- Linux v4.2.7
+
+* Thu Dec 03 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- Add patch to fix palm rejection on certain touchpads (rhbz 1287819)
+- Add new PCI ids for wireless, including Lenovo Yoga (rhbz 1275490)
+
+* Tue Dec 01 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-7515 aiptek: crash on invalid device descriptors (rhbz 1285326 1285331)
+- CVE-2015-7833 usbvision: crash on invalid device descriptors (rhbz 1270158 1270160)
+
+* Mon Nov 30 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix crash in add_key (rhbz 1284059)
+- CVE-2015-8374 btrfs: info leak when truncating compressed/inlined extents (rhbz 1286261 1286262)
+
+* Fri Nov 20 2015 Justin M. Forbes <jmforbes@fedoraproject.org>
+- Fix for GRE tunnel running in IPSec (rhbz 1272571)
+- Fix KVM on specific hardware (rhbz 1278688)
+
+* Mon Nov 16 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix ipset netfilter issues (rhbz 1279189)
+
+* Tue Nov 10 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix Yoga 900 rfkill switch issues (rhbz 1275490)
+
+* Tue Nov 10 2015 Justin M. Forbes <jforbes@fedoraproject.org> - 4.2.6-200
+- Linux v4.2.6
+
+* Tue Nov 10 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix incorrect size calculations in megaraid with 64K pages (rhbz 1269300)
+- CVE-2015-8104 kvm: DoS infinite loop in microcode DB exception (rhbz 1278496 1279691)
+- CVE-2015-5307 kvm: DoS infinite loop in microcode AC exception (rhbz 1277172 1279688)
+
+* Thu Nov  5 2015 Peter Robinson <pbrobinson@fedoraproject.org>
+- Disable Exynos IOMMU as it crashes
+
+* Thu Nov 05 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix backlight regression on older radeon devices (rhbz 1278407)
+
+* Wed Nov  4 2015 Peter Robinson <pbrobinson@fedoraproject.org>
+- Enable some IIO sensors (temp/humidity) on ARMv7
+
+* Tue Nov 03 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-7799 slip:crash when using PPP char dev driver (rhbz 1271134 1271135)
+
+* Tue Nov 03 2015 Justin M. Forbes <jforbes@fedoraproject.org>
+- Add xz-devel builreq for perf (rhbz 1167457)
+
+* Mon Nov 02 2015 Laura Abbott <labbott@fedoraproject.org>
+- Add spurious wakeup quirk for LynxPoint-LP controllers (rhbz 1257131)
+
+* Thu Oct 29 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- CVE-2015-7099 RDS: race condition on unbound socket null deref (rhbz 1276437 1276438)
+
+* Tue Oct 27 2015 Justin M. Forbes <jforbes@fedoraproject.org> - 4.2.5-201
+- Bump for build
+
+* Tue Oct 27 2015 Peter Robinson <pbrobinson@fedoraproject.org>
+- CMA memory patch to fix aarch64 builder lockups
+
+* Mon Oct 26 2015 Justin M. Forbes <jforbes@fedoraproject.org> - 4.2.5-200
+- Linux v4.2.5
+
+* Fri Oct 23 2015 Justin M. Forbes <jforbes@fedoraproject.org> - 4.2.4-200
+- Linux v4.2.4 (rhbz 1272645)
+
+* Tue Oct 20 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- Enable IEEE802154_ATUSB (rhbz 1272935)
+
+* Mon Oct 19 2015 Josh Boyer <jwboyer@fedoraproject.org>
+- Fix crash in key garbage collector when using request_key (rhbz 1272172)
+
+* Thu Oct 15 2015 Justin M. Forbes <jforbes@fedoraproject.org>
+- Fix for iscsi target issues (#rhbz 1271812)
+
+* Wed Oct 07 2015 Justin M. Forbes <jforbes@fedoraproject.org> - 4.2.3-200
+- Linux v4.2.3
+- CVE-2015-5156 virtio-net: bug overflow with large fraglist (rhbz 1243852 1266515)
+
+* Mon Oct 05 2015 Laura Abbott <labbott@fedoraproject.org>
+- Make headphone work with with T550 + Dock (rhbz 1268037)
+
+* Mon Oct 05 2015 Laura Abbott <labbott@fedoraproject.org>
+- Stop stack smash for several DVB devices (rhbz 1265978)
+
+* Mon Oct 05 2015 Josh Boyer <jwboyer@fedoraproject.org> - 4.1.10-200
 - Linxu v4.1.10
+- Add patch to fix soft lockups in network stack (rhbz 1266691)
 
 * Fri Oct 02 2015 Josh Boyer <jwboyer@fedoraproject.org>
 - CVE-2015-7613 Unauthorized access to IPC via SysV shm (rhbz 1268270 1268273)
@@ -2742,7 +3024,7 @@ fi
 - kernel-arm64.patch merge, but leave it off.
 - kernel-arm64-fix-psci-when-pg.patch: when -pg (because of ftrace) is enabled
   we must explicitly annotate which registers should be assigned, otherwise
-  gcc will do unexpected things behind our backs.
+  gcc will do unexpected things behind our backs. 
 
 * Tue Feb 17 2015 Josh Boyer <jwboyer@fedoraproject.org> - 3.20.0-0.rc0.git7.1
 - Linux v3.19-7478-g796e1c55717e
@@ -3896,7 +4178,7 @@ fi
 * Tue Apr 01 2014 Josh Boyer <jwboyer@fedoraproject.org> - 3.15.0-0.rc0.git2.1
 - CVE-2014-2678 net: rds: deref of NULL dev in rds_iw_laddr_check (rhbz 1083274 1083280)
 
-* Tue Apr 01 2014 Josh Boyer <jwboyer@fedoraproject.org>
+* Tue Apr 01 2014 Josh Boyer <jwboyer@fedoraproject.org> 
 - Linux v3.14-751-g683b6c6f82a6
 
 * Tue Apr 01 2014 Josh Boyer <jwboyer@fedoraproject.org> - 3.15.0-0.rc0.git1.1
@@ -3955,7 +4237,7 @@ fi
 - Linux v3.14-rc7
 - Disable debugging options.
 
-* Mon Mar 17 2014 Peter Robinson <pbrobinson@fedoraproject.org>
+* Mon Mar 17 2014 Peter Robinson <pbrobinson@fedoraproject.org> 
 - Build in Palmas regulator on ARM to fix ext MMC boot on OMAP5
 
 * Fri Mar 14 2014 Josh Boyer <jwboyer@fedoraproject.org> - 3.14.0-0.rc6.git4.1
