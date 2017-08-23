@@ -4559,7 +4559,7 @@ index f0dabd1..3f451e7 100644
  	} else {
  		tcp_rsk(req)->tfo_listener = false;
 diff --git a/net/ipv4/tcp_ipv4.c b/net/ipv4/tcp_ipv4.c
-index 198fc23..22fcc00 100644
+index 198fc23..8ce0934 100644
 --- a/net/ipv4/tcp_ipv4.c
 +++ b/net/ipv4/tcp_ipv4.c
 @@ -67,6 +67,8 @@
@@ -4732,7 +4732,7 @@ index 198fc23..22fcc00 100644
 +	u32 data_ack = 0;
 +	int mptcp = 0;
 +
-+	if (tcptw->mptcp_tw && tcptw->mptcp_tw->meta_tw) {
++	if (tcptw->mptcp_tw) {
 +		data_ack = (u32)tcptw->mptcp_tw->rcv_nxt;
 +		mptcp = 1;
 +	}
@@ -6272,7 +6272,7 @@ index aee8728..efc968e 100644
  	ireq->rcv_wscale = rcv_wscale;
  	ireq->ecn_ok = cookie_ecn_ok(&tcp_opt, sock_net(sk), dst);
 diff --git a/net/ipv6/tcp_ipv6.c b/net/ipv6/tcp_ipv6.c
-index 59c908ff..b340294 100644
+index 59c908ff..b05fae3 100644
 --- a/net/ipv6/tcp_ipv6.c
 +++ b/net/ipv6/tcp_ipv6.c
 @@ -62,6 +62,8 @@
@@ -6558,7 +6558,7 @@ index 59c908ff..b340294 100644
 +	u32 data_ack = 0;
 +	int mptcp = 0;
  
-+	if (tcptw->mptcp_tw && tcptw->mptcp_tw->meta_tw) {
++	if (tcptw->mptcp_tw) {
 +		data_ack = (u32)tcptw->mptcp_tw->rcv_nxt;
 +		mptcp = 1;
 +	}
@@ -8388,10 +8388,10 @@ index 0000000..5d76116
 +MODULE_VERSION("0.1");
 diff --git a/net/mptcp/mptcp_ctrl.c b/net/mptcp/mptcp_ctrl.c
 new file mode 100644
-index 0000000..a45bd3b
+index 0000000..05bdafb
 --- /dev/null
 +++ b/net/mptcp/mptcp_ctrl.c
-@@ -0,0 +1,2914 @@
+@@ -0,0 +1,2912 @@
 +/*
 + *	MPTCP implementation - MPTCP-control
 + *
@@ -10587,11 +10587,9 @@ index 0000000..a45bd3b
 +	tw->mptcp_tw = mptw;
 +	mptw->loc_key = mpcb->mptcp_loc_key;
 +	mptw->meta_tw = mpcb->in_time_wait;
-+	if (mptw->meta_tw) {
-+		mptw->rcv_nxt = mptcp_get_rcv_nxt_64(mptcp_meta_tp(tp));
-+		if (mpcb->mptw_state != TCP_TIME_WAIT)
-+			mptw->rcv_nxt++;
-+	}
++	mptw->rcv_nxt = mptcp_get_rcv_nxt_64(mptcp_meta_tp(tp));
++	if (mptw->meta_tw && mpcb->mptw_state != TCP_TIME_WAIT)
++		mptw->rcv_nxt++;
 +	rcu_assign_pointer(mptw->mpcb, mpcb);
 +
 +	spin_lock(&mpcb->tw_lock);
@@ -17469,10 +17467,10 @@ index 0000000..73298b2
 +MODULE_VERSION("0.1");
 diff --git a/net/mptcp/mptcp_output.c b/net/mptcp/mptcp_output.c
 new file mode 100644
-index 0000000..3861c4af
+index 0000000..b85562b
 --- /dev/null
 +++ b/net/mptcp/mptcp_output.c
-@@ -0,0 +1,1805 @@
+@@ -0,0 +1,1806 @@
 +/*
 + *	MPTCP implementation - Sending side
 + *
@@ -18457,7 +18455,8 @@ index 0000000..3861c4af
 +		if (skb)
 +			tp->mptcp->include_mpc = 0;
 +	}
-+	if (unlikely(tp->mptcp->pre_established)) {
++	if (unlikely(tp->mptcp->pre_established) &&
++	    (!skb || !(tcb->tcp_flags & (TCPHDR_FIN | TCPHDR_RST)))) {
 +		opts->options |= OPTION_MPTCP;
 +		opts->mptcp_options |= OPTION_MP_JOIN | OPTION_TYPE_ACK;
 +		*size += MPTCP_SUB_LEN_JOIN_ACK_ALIGN;
