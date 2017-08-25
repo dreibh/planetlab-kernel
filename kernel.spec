@@ -52,7 +52,7 @@ Summary: The Linux kernel
 %if 0%{?released_kernel}
 
 # Do we have a -stable update to apply?
-%define stable_update 83
+%define stable_update 84
 # Set rpm version accordingly
 %if 0%{?stable_update}
 %define stablerev %{stable_update}
@@ -492,7 +492,7 @@ Patch00: patch-4.%{base_sublevel}-git%{gitrev}.xz
 
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
-Patch02: 0001-MPTCP-v0.92-with-socketoptions-against-v4.4.83.patch
+Patch02: 0001-MPTCP-v0.92-with-socketoptions-against-v4.4.84.patch
 # ###### NorNet Kernel ######
 
 # build tweak for build ID magic, even for -vanilla
@@ -697,7 +697,7 @@ AutoProv: yes\
 # define variant -nornet
 %define buildid .nornet
 # !!! NOTE: This skips all Fedora-provided patches! !!!
-# !!! Since latest Fedora kernel is 4.4.14, and this is 4.4.83, everything
+# !!! Since latest Fedora kernel is 4.4.14, and this is 4.4.84, everything
 # !!! relevant should be upstream already => no need to handle Fedora patches.
 %define nopatches 1
 # !!! NOTE: Do not complain about new options!
@@ -1230,7 +1230,7 @@ done
 %endif
 
 # ###### NorNet Kernel ######
-ApplyPatch 0001-MPTCP-v0.92-with-socketoptions-against-v4.4.83.patch
+ApplyPatch 0001-MPTCP-v0.92-with-socketoptions-against-v4.4.84.patch
 # ###### NorNet Kernel ######
 
 ApplyPatch kbuild-AFTER_LINK.patch
