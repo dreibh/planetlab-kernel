@@ -20099,10 +20099,10 @@ index 0000000..8910ba9
 +MODULE_VERSION("0.89");
 diff --git a/net/mptcp/mptcp_sched.c b/net/mptcp/mptcp_sched.c
 new file mode 100644
-index 0000000..fae73c2
+index 0000000..434c535
 --- /dev/null
 +++ b/net/mptcp/mptcp_sched.c
-@@ -0,0 +1,633 @@
+@@ -0,0 +1,637 @@
 +/* MPTCP Scheduler module selector. Highly inspired by tcp_cong.c */
 +
 +#include <linux/module.h>
@@ -20711,9 +20711,13 @@ index 0000000..fae73c2
 +
 +	if (!sched) {
 +		err = -ENOENT;
-+	} else if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN)) {
++	}
++/* NorNet: made scheduler configurable again by regular user!
++	else if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN)) {
 +		err = -EPERM;
-+	} else {
++	}
++*/
++	else {
 +		strcpy(tcp_sk(sk)->mptcp_sched_name, name);
 +		tcp_sk(sk)->mptcp_sched_setsockopt = 1;
 +	}
