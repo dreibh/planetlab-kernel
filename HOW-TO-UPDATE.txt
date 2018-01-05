@@ -1,0 +1,12 @@
+1. Edit "sources":
+Set SHA256 and URL of upstream kernel sources
+
+2. Edit "upstream":
+Set Git tag of corresponding Fedora upstream repository.
+
+3. Update MPTCP patch.
+
+4. Update kernel.spec.
+ Set version, revision, name of MPTCP patch, etc.
+
+5. make rpm
