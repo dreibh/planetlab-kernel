@@ -3087,7 +3087,7 @@ index 0597ad7..d554fd4 100644
  	ireq->rcv_wscale  = rcv_wscale;
  	ireq->ecn_ok = cookie_ecn_ok(&tcp_opt, sock_net(sk), &rt->dst);
 diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
-index 05d2bde..b682604 100644
+index 05d2bde..abffcb3 100644
 --- a/net/ipv4/tcp.c
 +++ b/net/ipv4/tcp.c
 @@ -272,6 +272,7 @@
@@ -3599,7 +3599,7 @@ index 05d2bde..b682604 100644
  	default:
  		err = -ENOPROTOOPT;
  		break;
-@@ -3032,6 +3223,94 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
+@@ -3032,6 +3223,89 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
  		}
  		return 0;
  	}
@@ -3654,17 +3654,12 @@ index 05d2bde..b682604 100644
 +
 +	case MPTCP_DEBUG:
 +	case MPTCP_DEBUG_LEGACY:   /* !!! FIXME: compatibility to old patch !!! */
-+		if (val)
-+			tp->mptcp_debug = 1;
-+		else
-+			tp->mptcp_debug = 0;
++		val = tp->mptcp_debug;
 +		break;
++
 +	case MPTCP_NDIFFPORTS:
 +	case MPTCP_NDIFFPORTS_LEGACY:   /* !!! FIXME: compatibility to old patch !!! */
-+		if (val < 0)
-+			err = -EINVAL;
-+		else
-+			tp->mptcp_ndiffports = val;
++		val = tp->mptcp_ndiffports;
 +		break;
 +
 +	case MPTCP_INFO:
@@ -3694,7 +3689,7 @@ index 05d2bde..b682604 100644
  	default:
  		return -ENOPROTOOPT;
  	}
-@@ -3206,7 +3485,9 @@ void tcp_done(struct sock *sk)
+@@ -3206,7 +3480,9 @@ void tcp_done(struct sock *sk)
  	if (sk->sk_state == TCP_SYN_SENT || sk->sk_state == TCP_SYN_RECV)
  		TCP_INC_STATS(sock_net(sk), TCP_MIB_ATTEMPTFAILS);
  
@@ -3704,7 +3699,7 @@ index 05d2bde..b682604 100644
  	tcp_clear_xmit_timers(sk);
  	if (req)
  		reqsk_fastopen_remove(sk, req, false);
-@@ -3222,6 +3503,8 @@ EXPORT_SYMBOL_GPL(tcp_done);
+@@ -3222,6 +3498,8 @@ EXPORT_SYMBOL_GPL(tcp_done);
  
  int tcp_abort(struct sock *sk, int err)
  {
@@ -3713,7 +3708,7 @@ index 05d2bde..b682604 100644
  	if (!sk_fullsock(sk)) {
  		if (sk->sk_state == TCP_NEW_SYN_RECV) {
  			struct request_sock *req = inet_reqsk(sk);
-@@ -3236,7 +3519,7 @@ int tcp_abort(struct sock *sk, int err)
+@@ -3236,7 +3514,7 @@ int tcp_abort(struct sock *sk, int err)
  	}
  
  	/* Don't race with userspace socket closes such as tcp_close. */
@@ -3722,7 +3717,7 @@ index 05d2bde..b682604 100644
  
  	if (sk->sk_state == TCP_LISTEN) {
  		tcp_set_state(sk, TCP_CLOSE);
-@@ -3245,7 +3528,7 @@ int tcp_abort(struct sock *sk, int err)
+@@ -3245,7 +3523,7 @@ int tcp_abort(struct sock *sk, int err)
  
  	/* Don't race with BH socket closes such as inet_csk_listen_stop. */
  	local_bh_disable();
@@ -3731,7 +3726,7 @@ index 05d2bde..b682604 100644
  
  	if (!sock_flag(sk, SOCK_DEAD)) {
  		sk->sk_err = err;
-@@ -3257,9 +3540,9 @@ int tcp_abort(struct sock *sk, int err)
+@@ -3257,9 +3535,9 @@ int tcp_abort(struct sock *sk, int err)
  		tcp_done(sk);
  	}
  
