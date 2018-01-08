@@ -34,4 +34,7 @@ CONFIG_MPTCP_REDUNDANT=m
 CONFIG_DEFAULT_SCHEDULER=y
 CONFIG_DEFAULT_MPTCP_SCHED="default"
 
+# ====== Other ============================================
+CONFIG_IP_DCCP_CCID3=y
+
 # ###### NorNet Kernel ######################################################
