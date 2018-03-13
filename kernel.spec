@@ -54,7 +54,7 @@ Summary: The Linux kernel
 %if 0%{?released_kernel}
 
 # Do we have a -stable update to apply?
-%define stable_update 76
+%define stable_update 87
 # Set rpm version accordingly
 %if 0%{?stable_update}
 %define stablerev %{stable_update}
@@ -490,7 +490,7 @@ Source5000: patch-4.%{base_sublevel}-git%{gitrev}.xz
 
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
-Patch02: 0001-MPTCP-v0.93-with-socketoptions-against-v4.9.76.patch
+Patch02: 0001-MPTCP-v0.93-with-socketoptions-against-v4.9.87.patch
 # ###### NorNet Kernel ######
 
 # build tweak for build ID magic, even for -vanilla
@@ -1266,7 +1266,7 @@ done
 
 
 # ###### NorNet Kernel ######
-ApplyPatch 0001-MPTCP-v0.93-with-socketoptions-against-v4.9.76.patch
+ApplyPatch 0001-MPTCP-v0.93-with-socketoptions-against-v4.9.87.patch
 # ###### NorNet Kernel ######
 
 
