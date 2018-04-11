@@ -1,0 +1,40 @@
+#!/bin/bash -e
+#
+# Create MPTCP patch
+# Copyright (C) 2018 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@simula.no
+
+MPTCP_KERNEL_REPOSITORY="~/src/mptcp-kernel"
+MPTCP_KERNEL_UPSTREAM_TAG="v4.9.93"
+MPTCP_PATCH_NAME="0001-MPTCP-v0.93-with-socketoptions-against-$MPTCP_KERNEL_UPSTREAM_TAG.patch"
+
+if [ $# -ne 3 ] ; then
+   echo >&2 "Usage: $0 mptcp_kernel_repository kernel_upstream_tag patch_name"
+   echo >&2 "Example: $0 $MPTCP_KERNEL_REPOSITORY $MPTCP_KERNEL_UPSTREAM_TAG $MPTCP_PATCH_NAME"
+   exit 1
+fi
+
+MPTCP_KERNEL_REPOSITORY="$1"
+MPTCP_KERNEL_UPSTREAM_TAG="$2"
+MPTCP_PATCH_NAME="$3"
+
+(
+   cd "$MPTCP_KERNEL_REPOSITORY"
+   git diff $MPTCP_KERNEL_UPSTREAM_TAG
+) >$MPTCP_PATCH_NAME.tmp
+
+mv $MPTCP_PATCH_NAME.tmp $MPTCP_PATCH_NAME
