@@ -1,4 +1,4 @@
-- The interface for the make file is not changed with respect to the planetlab 2.6 kernel. So it should just work out of the box on the build system.
+- The interface for the make file is not changed with respect to the planetlab 4.x kernel. So it should just work out of the box on the build system.
 
 - To compile a new kernel rpm, just type (the order of srpm and rpm matters)
 $make srpm rpm
@@ -7,4 +7,4 @@ $make srpm rpm
 
 - planetlab-patches.in is empty right now. New patches should be specified here. They will be automatically included on the spec file.
 
-- config-planetlab file holds specific configuration variables for the kernel. Rgight now, we are using the default configuration provided by Fedora.
+- config-planetlab file holds specific configuration variables for the kernel. Right now, we are using the default configuration provided by Fedora.
