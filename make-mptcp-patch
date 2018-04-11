@@ -18,9 +18,9 @@
 #
 # Contact: dreibh@simula.no
 
-MPTCP_KERNEL_REPOSITORY=~/src/mptcp-kernel
-MPTCP_KERNEL_UPSTREAM_TAG=v4.16.1
-MPTCP_PATCH_NAME=0001-MPTCP-v0.94-with-socketoptions-against-v4.16.1.patch
+MPTCP_KERNEL_REPOSITORY="~/src/mptcp-kernel"
+MPTCP_KERNEL_UPSTREAM_TAG="v4.16.1"
+MPTCP_PATCH_NAME="0001-MPTCP-v0.94-with-socketoptions-against-$MPTCP_KERNEL_UPSTREAM_TAG.patch"
 
 if [ $# -ne 3 ] ; then
    echo >&2 "Usage: $0 mptcp_kernel_repository kernel_upstream_tag patch_name"
