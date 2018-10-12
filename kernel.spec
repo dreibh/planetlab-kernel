@@ -509,7 +509,7 @@ Source5000: patch-4.%{base_sublevel}-git%{gitrev}.xz
 
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
-Source5008: 0001-MPTCP-trunk-with-socketoptions-against-v4.18.11.patch
+Source5008: 0001-MPTCP-trunk-with-socketoptions-against-v4.18.13.patch
 # ###### NorNet Kernel ######
 
 ## Patches needed for building this package
@@ -1094,7 +1094,7 @@ git commit -a -m "Stable update"
 
 
 # ###### NorNet Kernel ######
-ApplyPatch 0001-MPTCP-trunk-with-socketoptions-against-v4.18.11.patch
+ApplyPatch 0001-MPTCP-trunk-with-socketoptions-against-v4.18.13.patch
 # ###### NorNet Kernel ######
 
 
