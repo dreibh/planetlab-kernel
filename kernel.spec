@@ -401,8 +401,7 @@ BuildRequires: bzip2, xz, findutils, gzip, m4, perl-interpreter, perl-Carp, perl
 BuildRequires: gcc, binutils, redhat-rpm-config, hmaccalc, bison, flex
 BuildRequires: net-tools, hostname, bc, elfutils-devel
 # Used to mangle unversioned shebangs to be Python 3
-# NorNet: pathfix.py fix
-BuildRequires: python3-pip
+# FIXME! NorNet: pathfix.py work-around
 # BuildRequires: /usr/bin/pathfix.py
 %if %{with_sparse}
 BuildRequires: sparse
@@ -877,9 +876,6 @@ input and output, etc.
 
 %prep
 
-# NorNet: pathfix.py fix
-pip3 install pathfix.py
-
 # do a few sanity-checks for --with *only builds
 %if %{with_baseonly}
 %if !%{with_up}%{with_pae}
@@ -1201,10 +1197,11 @@ find . -name .gitignore -delete >/dev/null
 # -p preserves timestamps
 # -n prevents creating ~backup files
 # -i specifies the interpreter for the shebang
-pathfix.py -pni "%{__python3} %{py3_shbang_opts}" scripts/
-pathfix.py -pni "%{__python3} %{py3_shbang_opts}" scripts/diffconfig
-pathfix.py -pni "%{__python3} %{py3_shbang_opts}" scripts/bloat-o-meter
-pathfix.py -pni "%{__python3} %{py3_shbang_opts}" scripts/show_delta
+# !!! FIXME: NorNet work-around for F25 !!!
+# pathfix.py -pni "%{__python3} %{py3_shbang_opts}" scripts/
+# pathfix.py -pni "%{__python3} %{py3_shbang_opts}" scripts/diffconfig
+# pathfix.py -pni "%{__python3} %{py3_shbang_opts}" scripts/bloat-o-meter
+# pathfix.py -pni "%{__python3} %{py3_shbang_opts}" scripts/show_delta
 
 cd ..
 
