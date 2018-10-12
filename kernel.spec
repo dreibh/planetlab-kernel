@@ -401,7 +401,9 @@ BuildRequires: bzip2, xz, findutils, gzip, m4, perl-interpreter, perl-Carp, perl
 BuildRequires: gcc, binutils, redhat-rpm-config, hmaccalc, bison, flex
 BuildRequires: net-tools, hostname, bc, elfutils-devel
 # Used to mangle unversioned shebangs to be Python 3
-BuildRequires: /usr/bin/pathfix.py
+# NorNet: pathfix.py fix
+BuildRequires: python3-pip
+# BuildRequires: /usr/bin/pathfix.py
 %if %{with_sparse}
 BuildRequires: sparse
 %endif
@@ -874,6 +876,10 @@ input and output, etc.
 
 
 %prep
+
+# NorNet: pathfix.py fix
+pip3 install pathfix.py
+
 # do a few sanity-checks for --with *only builds
 %if %{with_baseonly}
 %if !%{with_up}%{with_pae}
