@@ -56,5 +56,5 @@ install:
 script:
   - |
     if [ "$TRAVIS_OS_NAME" = "linux" ] ; then
-       sudo docker exec -t ubuntu-test bash -c "make srpm rpm"
+       travis_wait 300 sudo docker exec -t ubuntu-test bash -c "make srpm rpm"
     fi
