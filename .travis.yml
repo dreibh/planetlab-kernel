@@ -1,0 +1,78 @@
+language: c
+
+matrix:
+  include:
+
+    # ###### Fedora Linux ###################################################
+
+    # ====== Fedora 25 ======================================================
+    - os: linux
+      dist: xenial
+      group: travis_latest
+      env: DOCKER="fedora:25" VARIANT="fedora" COMPILER_C="gcc" COMPILER_CXX="g++"
+    - os: linux
+      dist: xenial
+      group: travis_latest
+      env: DOCKER="fedora:25" VARIANT="fedora" COMPILER_C="clang" COMPILER_CXX="clang++"
+
+    # ====== Fedora 27 ======================================================
+    - os: linux
+      dist: xenial
+      group: travis_latest
+      env: DOCKER="fedora:27" VARIANT="fedora" COMPILER_C="gcc" COMPILER_CXX="g++"
+    - os: linux
+      dist: xenial
+      group: travis_latest
+      env: DOCKER="fedora:27" VARIANT="fedora" COMPILER_C="clang" COMPILER_CXX="clang++"
+
+    # ====== Fedora 29 ======================================================
+    - os: linux
+      dist: xenial
+      group: travis_latest
+      env: DOCKER="fedora:29" VARIANT="fedora" COMPILER_C="gcc" COMPILER_CXX="g++"
+    - os: linux
+      dist: xenial
+      group: travis_latest
+      env: DOCKER="fedora:29" VARIANT="fedora" COMPILER_C="clang" COMPILER_CXX="clang++"
+
+    # ====== Fedora Rawhide =================================================
+    - os: linux
+      dist: xenial
+      group: travis_latest
+      env: DOCKER="fedora:rawhide" VARIANT="fedora" COMPILER_C="gcc" COMPILER_CXX="g++"
+    - os: linux
+      dist: xenial
+      group: travis_latest
+      env: DOCKER="fedora:rawhide" VARIANT="fedora" COMPILER_C="clang" COMPILER_CXX="clang++"
+
+
+before_install:
+  - |
+    if [ "$TRAVIS_OS_NAME" = "linux" ] ; then
+       sudo docker run -d --name ubuntu-test -v $(pwd):/travis -w /travis $DOCKER tail -f /dev/null
+       sudo docker ps
+    elif [ "$TRAVIS_OS_NAME" = "osx" ] ; then
+       brew update
+       # brew install cmake
+    fi
+
+
+install:
+  - |
+    if [ "$TRAVIS_OS_NAME" = "linux" ] ; then
+       if [ "$VARIANT" = "ubuntu" ] ; then
+          sudo docker exec -t ubuntu-test bash -c "apt-get update"
+          sudo docker exec -t ubuntu-test bash -c "apt-get install -y gcc make"
+       elif [ "$VARIANT" = "fedora" ] ; then
+          sudo docker exec -t ubuntu-test bash -c "dnf install -y gcc make kmod patch bash tar git-core bzip2 xz findutils gzip m4 perl-interpreter perl-Carp perl-devel perl-generators make diffutils gawk gcc binutils redhat-rpm-config hmaccalc bison flex net-tools hostname bc elfutils-devel sparse rpm-build elfutils openssl openssl-devel pesign"
+       fi
+    fi
+
+
+script:
+  - |
+    if [ "$TRAVIS_OS_NAME" = "linux" ] ; then
+       sudo docker exec -t ubuntu-test bash -c "echo OPTIONS: CC=$COMPILER_C CXX=$COMPILER_CXX"
+       sudo docker exec -t ubuntu-test bash -c "env CC=$COMPILER_C CXX=$COMPILER_CXX cmake -DCMAKE_INSTALL_PREFIX=/usr ."
+       sudo docker exec -t ubuntu-test bash -c "make VERBOSE=1"
+    fi
