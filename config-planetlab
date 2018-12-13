@@ -9,6 +9,9 @@
 # -- CONFIG_CC_STACKPROTECTOR_STRONG=
 # -- CONFIG_CC_STACKPROTECTOR_REGULAR=y
 
+# For 4.19 kernel: net/ipv4/tcp_ipv4.o fails to build with CONFIG_MEMCG.
+CONFIG_MEMCG=n
+
 # ====== MPTCP ============================================
 CONFIG_TCP_CONG_LIA=m
 CONFIG_TCP_CONG_OLIA=m
