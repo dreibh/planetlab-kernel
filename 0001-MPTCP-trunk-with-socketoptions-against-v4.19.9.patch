@@ -4528,7 +4528,7 @@ index 664fa7d8f7d9..f08fae2cc75b 100644
  	} else {
  		tcp_rsk(req)->tfo_listener = false;
 diff --git a/net/ipv4/tcp_ipv4.c b/net/ipv4/tcp_ipv4.c
-index cd426313a298..9a45fd8e2aa3 100644
+index cd426313a298..6ce7280e215f 100644
 --- a/net/ipv4/tcp_ipv4.c
 +++ b/net/ipv4/tcp_ipv4.c
 @@ -67,6 +67,8 @@
@@ -4967,15 +4967,8 @@ index cd426313a298..9a45fd8e2aa3 100644
  	tcp_cleanup_ulp(sk);
  
  	/* Cleanup up the write buffer. */
-@@ -2487,8 +2582,16 @@ struct proto tcp_prot = {
- #ifdef CONFIG_COMPAT
- 	.compat_setsockopt	= compat_tcp_setsockopt,
+@@ -2489,6 +2584,9 @@ struct proto tcp_prot = {
  	.compat_getsockopt	= compat_tcp_getsockopt,
-+#endif
-+#ifdef CONFIG_MEMCG_KMEM
-+	.init_cgroup		= tcp_init_cgroup,
-+	.destroy_cgroup		= tcp_destroy_cgroup,
-+	.proto_cgroup		= tcp_proto_cgroup,
  #endif
  	.diag_destroy		= tcp_abort,
 +#ifdef CONFIG_MPTCP
