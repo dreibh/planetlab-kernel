@@ -62,13 +62,13 @@ Summary: The Linux kernel
 # base_sublevel is the kernel version we're starting with and patching
 # on top of -- for example, 3.1-rc7-git1 starts with a 3.0 base,
 # which yields a base_sublevel of 0.
-%define base_sublevel 18
+%define base_sublevel 19
 
 ## If this is a released kernel ##
 %if 0%{?released_kernel}
 
 # Do we have a -stable update to apply?
-%define stable_update 16
+%define stable_update 9
 # Set rpm version accordingly
 %if 0%{?stable_update}
 %define stablerev %{stable_update}
@@ -512,7 +512,7 @@ Source5000: patch-4.%{base_sublevel}-git%{gitrev}.xz
 
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
-Source5008: 0001-MPTCP-trunk-with-socketoptions-against-v4.18.16.patch
+Source5008: 0001-MPTCP-trunk-with-socketoptions-against-v4.19.9.patch
 # ###### NorNet Kernel ######
 
 ## Patches needed for building this package
@@ -1098,7 +1098,7 @@ git commit -a -m "Stable update"
 
 
 # ###### NorNet Kernel ######
-ApplyPatch 0001-MPTCP-trunk-with-socketoptions-against-v4.18.16.patch
+ApplyPatch 0001-MPTCP-trunk-with-socketoptions-against-v4.19.9.patch
 # ###### NorNet Kernel ######
 
 
