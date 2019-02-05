@@ -3870,7 +3870,7 @@ index 018a48477355..370fe7d4b579 100644
  	 * and queues the child into listener accept queue.
  	 */
 diff --git a/net/ipv4/tcp_input.c b/net/ipv4/tcp_input.c
-index 664fa7d8f7d9..397e37bf8591 100644
+index 664fa7d8f7d9..8b8e41193941 100644
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
 @@ -76,35 +76,15 @@
@@ -4573,7 +4573,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  
  		if (!inet_csk(sk)->icsk_ca_ops->cong_control)
  			tcp_update_pacing_rate(sk);
-@@ -6130,6 +6289,19 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
+@@ -6130,6 +6289,22 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
  
  		tcp_initialize_rcv_mss(sk);
  		tcp_fast_path_on(tp);
@@ -4587,13 +4587,16 @@ index 664fa7d8f7d9..397e37bf8591 100644
 +			} else {
 +				tcp_send_ack(sk);
 +
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
 +				mptcp_push_pending_frames(mptcp_meta_sk(sk));
++#pragma GCC diagnostic pop
 +			}
 +		}
  		break;
  
  	case TCP_FIN_WAIT1: {
-@@ -6177,7 +6349,8 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
+@@ -6177,7 +6352,8 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
  		tmo = tcp_fin_time(sk);
  		if (tmo > TCP_TIMEWAIT_LEN) {
  			inet_csk_reset_keepalive_timer(sk, tmo - TCP_TIMEWAIT_LEN);
@@ -4603,7 +4606,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  			/* Bad case. We could lose such FIN otherwise.
  			 * It is not a big problem, but it looks confusing
  			 * and not so rare event. We still can lose it now,
-@@ -6186,7 +6359,7 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
+@@ -6186,7 +6362,7 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
  			 */
  			inet_csk_reset_keepalive_timer(sk, tmo);
  		} else {
@@ -4612,7 +4615,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  			goto discard;
  		}
  		break;
-@@ -6194,7 +6367,7 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
+@@ -6194,7 +6370,7 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
  
  	case TCP_CLOSING:
  		if (tp->snd_una == tp->write_seq) {
@@ -4621,7 +4624,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  			goto discard;
  		}
  		break;
-@@ -6206,6 +6379,9 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
+@@ -6206,6 +6382,9 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
  			goto discard;
  		}
  		break;
@@ -4631,7 +4634,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  	}
  
  	/* step 6: check the URG bit */
-@@ -6227,7 +6403,8 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
+@@ -6227,7 +6406,8 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
  		 */
  		if (sk->sk_shutdown & RCV_SHUTDOWN) {
  			if (TCP_SKB_CB(skb)->end_seq != TCP_SKB_CB(skb)->seq &&
@@ -4641,7 +4644,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  				NET_INC_STATS(sock_net(sk), LINUX_MIB_TCPABORTONDATA);
  				tcp_reset(sk);
  				return 1;
-@@ -6324,6 +6501,8 @@ static void tcp_openreq_init(struct request_sock *req,
+@@ -6324,6 +6504,8 @@ static void tcp_openreq_init(struct request_sock *req,
  	ireq->wscale_ok = rx_opt->wscale_ok;
  	ireq->acked = 0;
  	ireq->ecn_ok = 0;
@@ -4650,7 +4653,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  	ireq->ir_rmt_port = tcp_hdr(skb)->source;
  	ireq->ir_num = ntohs(tcp_hdr(skb)->dest);
  	ireq->ir_mark = inet_request_mark(sk, skb);
-@@ -6421,12 +6600,17 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
+@@ -6421,12 +6603,17 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
  	/* TW buckets are converted to open requests without
  	 * limitations, they conserve resources and peer is
  	 * evidently real one.
@@ -4669,7 +4672,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  	}
  
  	if (sk_acceptq_is_full(sk)) {
-@@ -6444,8 +6628,8 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
+@@ -6444,8 +6631,8 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
  	tcp_clear_options(&tmp_opt);
  	tmp_opt.mss_clamp = af_ops->mss_clamp;
  	tmp_opt.user_mss  = tp->rx_opt.user_mss;
@@ -4680,7 +4683,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  
  	if (want_cookie && !tmp_opt.saw_tstamp)
  		tcp_clear_options(&tmp_opt);
-@@ -6460,7 +6644,8 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
+@@ -6460,7 +6647,8 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
  	/* Note: tcp_v6_init_req() might override ir_iif for link locals */
  	inet_rsk(req)->ir_iif = inet_request_bound_dev_if(sk, skb);
  
@@ -4690,7 +4693,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  
  	if (security_inet_conn_request(sk, skb, req))
  		goto drop_and_free;
-@@ -6496,7 +6681,7 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
+@@ -6496,7 +6684,7 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
  	tcp_ecn_create_request(req, skb, sk, dst);
  
  	if (want_cookie) {
@@ -4699,7 +4702,7 @@ index 664fa7d8f7d9..397e37bf8591 100644
  		req->cookie_ts = tmp_opt.tstamp_ok;
  		if (!tmp_opt.tstamp_ok)
  			inet_rsk(req)->ecn_ok = 0;
-@@ -6511,12 +6696,18 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
+@@ -6511,12 +6699,18 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
  		fastopen_sk = tcp_try_fastopen(sk, skb, req, &foc, dst);
  	}
  	if (fastopen_sk) {
