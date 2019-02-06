@@ -61,12 +61,12 @@ srpm:
 	 cat config-planetlab >> config-generic)
 	./rpmmacros.sh
 	export HOME=$(shell pwd) ; rpmbuild $(RPMDIRDEFS) $(RPMDEFS) --nodeps -bs $(SPECFILE)
-	# FIXME!!! rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
+	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
 
 TARGET ?= $(shell uname -m)
 rpm: srpm
 	# 25.03.2014: Call rpmbuild for noarch. This generates the kernel-docs package.
-	# ??? FIXME!!! rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps --target $(PREPARCH) -bb $(SPECFILE)
+	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps --target $(PREPARCH) -bb $(SPECFILE)
 	# Now, run the build for the architecture-specific packages.
 	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_ARCH_BUILDOPT) --nodeps --target $(TARGET) -bb $(SPECFILE)
 
