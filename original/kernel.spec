@@ -6,7 +6,7 @@ Summary: The Linux kernel
 # For a stable, released kernel, released_kernel should be 1. For rawhide
 # and/or a kernel built from an rc or git snapshot, released_kernel should
 # be 0.
-%global released_kernel 0
+%global released_kernel 1
 
 # Sign modules on x86.  Make sure the config files match this setting if more
 # architectures are added.
@@ -42,19 +42,19 @@ Summary: The Linux kernel
 # For non-released -rc kernels, this will be appended after the rcX and
 # gitX tags, so a 3 here would become part of release "0.rcX.gitX.3"
 #
-%global baserelease 1
+%global baserelease 200
 %global fedora_build %{baserelease}
 
 # base_sublevel is the kernel version we're starting with and patching
 # on top of -- for example, 3.1-rc7-git1 starts with a 3.0 base,
 # which yields a base_sublevel of 0.
-%define base_sublevel 18
+%define base_sublevel 20
 
 ## If this is a released kernel ##
 %if 0%{?released_kernel}
 
 # Do we have a -stable update to apply?
-%define stable_update 0
+%define stable_update 6
 # Set rpm version accordingly
 %if 0%{?stable_update}
 %define stablerev %{stable_update}
@@ -67,7 +67,7 @@ Summary: The Linux kernel
 # The next upstream release sublevel (base_sublevel+1)
 %define upstream_sublevel %(echo $((%{base_sublevel} + 1)))
 # The rc snapshot level
-%global rcrev 6
+%global rcrev 7
 # The git snapshot level
 %define gitrev 0
 # Set rpm version accordingly
@@ -125,8 +125,10 @@ Summary: The Linux kernel
 %define debugbuildsenabled 1
 
 # Kernel headers are being split out into a separate package
+%if 0%{?fedora}
 %define with_headers 0
 %define with_cross_headers 0
+%endif
 
 %if %{with_verbose}
 %define make_opts V=1
@@ -384,7 +386,7 @@ Requires: kernel-modules-uname-r = %{KVERREL}%{?variant}
 BuildRequires: kmod, patch, bash, tar, git-core
 BuildRequires: bzip2, xz, findutils, gzip, m4, perl-interpreter, perl-Carp, perl-devel, perl-generators, make, diffutils, gawk
 BuildRequires: gcc, binutils, redhat-rpm-config, hmaccalc, bison, flex
-BuildRequires: net-tools, hostname, bc, elfutils-devel
+BuildRequires: net-tools, hostname, bc, elfutils-devel, gcc-plugin-devel
 # Used to mangle unversioned shebangs to be Python 3
 BuildRequires: /usr/bin/pathfix.py
 %if %{with_sparse}
@@ -461,10 +463,6 @@ Source43: generate_bls_conf.sh
 # This file is intentionally left empty in the stock kernel. Its a nicety
 # added for those wanting to do custom rebuilds with altered config opts.
 Source1000: kernel-local
-
-# Sources for kernel-tools
-Source2000: cpupower.service
-Source2001: cpupower.config
 
 # Here should be only the patches up to the upstream canonical Linus tree.
 
@@ -560,10 +558,6 @@ Patch211: drm-i915-hush-check-crtc-state.patch
 
 Patch212: efi-secureboot.patch
 
-# Fix printing of "EFI stub: UEFI Secure Boot is enabled.",
-# queued upstream in efi.git/next
-Patch213: efi-x86-call-parse-options-from-efi-main.patch
-
 # 300 - ARM patches
 Patch300: arm64-Add-option-of-13-for-FORCE_MAX_ZONEORDER.patch
 
@@ -583,26 +577,33 @@ Patch305: qcom-msm89xx-fixes.patch
 # https://patchwork.kernel.org/project/linux-mmc/list/?submitter=71861
 Patch306: arm-sdhci-esdhc-imx-fixes.patch
 
-# https://www.spinics.net/lists/arm-kernel/msg670137.html
-Patch307: arm64-ZynqMP-firmware-clock-drivers-core.patch
+# https://patchwork.kernel.org/patch/10686407/
+Patch331: raspberrypi-Fix-firmware-calls-with-large-buffers.patch
 
-Patch308: arm64-96boards-Rock960-CE-board-support.patch
-Patch309: arm64-rockchip-add-initial-Rockpro64.patch
+# Improve raspberry pi camera and analog audio
+Patch332: bcm2836-Improve-VCHIQ-cache-line-size-handling.patch
+Patch333: bcm2835-vc04_services-Improve-driver-load-unload.patch
 
-Patch310: gpio-pxa-handle-corner-case-of-unprobed-device.patch
+# Initall support for the 3A+
+Patch334: bcm2837-dts-add-Raspberry-Pi-3-A.patch
 
-Patch330: bcm2835-cpufreq-add-CPU-frequency-control-driver.patch
+# Fixes for bcm2835 mmc (sdcard) driver
+Patch335: bcm2835-mmc-Several-fixes-for-bcm2835-driver.patch
+
+# https://www.spinics.net/lists/arm-kernel/msg699583.html
+Patch337: ARM-dts-bcm283x-Several-DTS-improvements.patch
+
+Patch339: bcm2835-cpufreq-add-CPU-frequency-control-driver.patch
 
 # Patches enabling device specific brcm firmware nvram
-Patch340: 0001-brcmfmac-Remove-firmware-loading-code-duplication.patch
-Patch341: 0002-brcmfmac-Remove-recursion-from-firmware-load-error-h.patch
-Patch342: 0003-brcmfmac-Add-support-for-first-trying-to-get-a-board.patch
-Patch343: 0004-brcmfmac-Set-board_type-used-for-nvram-file-selectio.patch
+# https://www.spinics.net/lists/linux-wireless/msg178827.html
+Patch340: brcmfmac-Remove-firmware-loading-code-duplication.patch
+
+Patch341: brcmfmac-Call-brcmf_dmi_probe-before-brcmf_of_probe.patch
 
 # Fix for AllWinner A64 Timer Errata, still not final
-# https://patchwork.kernel.org/patch/10392891/
-Patch350: arm64-arch_timer-Workaround-for-Allwinner-A64-timer-instability.patch
-Patch351: arm64-dts-allwinner-a64-Enable-A64-timer-workaround.patch
+# https://www.spinics.net/lists/arm-kernel/msg699622.html
+Patch350: Allwinner-A64-timer-workaround.patch
 
 # 400 - IBM (ppc/s390x) patches
 
@@ -613,6 +614,21 @@ Patch501: Fix-for-module-sig-verification.patch
 
 # rhbz 1431375
 Patch502: input-rmi4-remove-the-need-for-artifical-IRQ.patch
+
+# rhbz 1526312 patch merged into 5.0-rc#
+Patch504: iio-accel-kxcjk1013-Add-more-hardware-ids.patch
+
+# rhbz 1645070 patch merged into 5.0-rc#
+Patch505: asus-fx503-keyb.patch
+
+# CVE-2019-3459 and CVE-2019-3460 rhbz 1663176 1663179 1665925
+Patch507: CVE-2019-3459-and-CVE-2019-3460.patch
+
+# rhbz 1663613 patch merged into 5.0-rc#
+Patch508: 0001-drm-nouveau-register-backlight-on-pascal-and-newer.patch
+
+# CVE-2018-16880 rhbz 1656472 1669545
+Patch509: CVE-2018-16880.patch
 
 # END OF PATCH DEFINITIONS
 
@@ -1202,8 +1218,8 @@ cp_vmlinux()
 # from redhat-rpm-config assume that host == target so target arch
 # flags cause issues with the host compiler.
 %if !%{with_cross}
-%define build_hostcflags  %{build_cflags}
-%define build_hostldflags %{build_ldflags} -Wl,--build-id=uuid
+%define build_hostcflags  %{?build_cflags}
+%define build_hostldflags %{?build_ldflags} -Wl,--build-id=uuid
 %endif
 
 BuildKernel() {
@@ -1235,7 +1251,9 @@ BuildKernel() {
     %endif
 
     # make sure EXTRAVERSION says what we want it to say
-    perl -p -i -e "s/^EXTRAVERSION.*/EXTRAVERSION = -%{release}.%{_target_cpu}${Flav}/" Makefile
+    # Trim the release if this is a CI build, since KERNELVERSION is limited to 64 characters
+    ShortRel=$(python3 -c "import re; print(re.sub(r'\.pr\.[0-9A-Fa-f]{32}', '', '%{release}'))")
+    perl -p -i -e "s/^EXTRAVERSION.*/EXTRAVERSION = -${ShortRel}.%{_target_cpu}${Flav}/" Makefile
 
     # if pre-rc1 devel kernel, must fix up PATCHLEVEL for our versioning scheme
     %if !0%{?rcrev}
@@ -1272,7 +1290,7 @@ BuildKernel() {
 %ifarch %{arm} aarch64
     %{make} %{?make_opts} ARCH=$Arch dtbs dtbs_install INSTALL_DTBS_PATH=$RPM_BUILD_ROOT/%{image_install_path}/dtb-$KernelVer
     cp -r $RPM_BUILD_ROOT/%{image_install_path}/dtb-$KernelVer $RPM_BUILD_ROOT/lib/modules/$KernelVer/dtb
-    find arch/$Arch/boot/dts -name '*.dtb' -type f | xargs rm -f
+    find arch/$Arch/boot/dts -name '*.dtb' -type f -delete
 %endif
 
     # Start installing the results
@@ -1553,7 +1571,7 @@ BuildKernel() {
     ln -sf $DevelDir $RPM_BUILD_ROOT/lib/modules/$KernelVer/build
 
     # prune junk from kernel-devel
-    find $RPM_BUILD_ROOT/usr/src/kernels -name ".*.cmd" -exec rm -f {} \;
+    find $RPM_BUILD_ROOT/usr/src/kernels -name ".*.cmd" -delete
 
     # build a BLS config for this kernel
     %{SOURCE43} "$KernelVer" "$RPM_BUILD_ROOT" "%{?variant}"
@@ -1663,7 +1681,7 @@ make ARCH=%{hdrarch} INSTALL_HDR_PATH=$RPM_BUILD_ROOT/usr headers_install
 
 find $RPM_BUILD_ROOT/usr/include \
      \( -name .install -o -name .check -o \
-        -name ..install.cmd -o -name ..check.cmd \) | xargs rm -f
+        -name ..install.cmd -o -name ..check.cmd \) -delete
 
 %endif
 
@@ -1673,7 +1691,7 @@ make ARCH=%{hdrarch} INSTALL_HDR_PATH=$RPM_BUILD_ROOT/usr/tmp-headers headers_in
 
 find $RPM_BUILD_ROOT/usr/tmp-headers/include \
      \( -name .install -o -name .check -o \
-        -name ..install.cmd -o -name ..check.cmd \) | xargs rm -f
+        -name ..install.cmd -o -name ..check.cmd \) -delete
 
 # Copy all the architectures we care about to their respective asm directories
 for arch in arm arm64 powerpc s390 x86 ; do
@@ -1883,159 +1901,255 @@ fi
 #
 #
 %changelog
-* Mon Oct 01 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc6.git0.1
-- Linux v4.19-rc6
+* Thu Jan 31 2019 Justin M. Forbes <jforbes@fedoraproject.org> - 4.20.6-200
+- Linux v4.20.6
 
-* Mon Oct 01 2018 Jeremy Cline <jcline@redhat.com>
-- Disable debugging options.
+* Mon Jan 28 2019 Justin M. Forbes <jforbes@fedoraproject.org> - 4.20.5-200
+- Linux v4.20.5
+- Fix CVE-2018-16880 (rhbz 1656472 1669545)
 
-* Mon Oct  1 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+* Wed Jan 23 2019 Hans de Goede <hdegoede@redhat.com>
+- Add upstream patch fixing backlight control not working on some laptops
+  with a Nvidia GPU (rhbz#1663613, rhbz#1665505)
+
+* Wed Jan 23 2019 Justin M. Forbes <jforbes@fedoraproject.org> - 4.20.4-200
+- Linux v4.20.4
+
+* Thu Jan 17 2019 Justin M. Forbes <jforbes@fedoraproject.org> - 4.20.3-200
+- Linux v4.20.3 rebase
+
+* Mon Jan 14 2019 Jeremy Cline <jcline@redhat.com> - 4.19.15-300
+- Linux v4.19.15
+- Fix CVE-2019-3459 and CVE-2019-3460 (rbhz 1663176 1663179 1665925)
+
+* Wed Jan 09 2019 Jeremy Cline <jcline@redhat.com> - 4.19.14-300
+- Linux v4.19.14
+
+* Wed Jan 09 2019 Justin M. Forbes <jforbes@fedoraproject.org>
+- Fix CVE-2019-3701 (rhbz 1663729 1663730)
+
+* Mon Jan  7 2019 Hans de Goede <hdegoede@redhat.com>
+- Add patch to fix bluetooth on RPI 3B+ registering twice (rhbz#1661961)
+
+* Sat Dec 29 2018 Jeremy Cline <jcline@redhat.com> - 4.19.13-300
+- Linux v4.19.13
+
+* Thu Dec 27 2018 Hans de Goede <hdegoede@redhat.com>
+- Set CONFIG_REALTEK_PHY=y to workaround realtek ethernet issues (rhbz 1650984)
+
+* Mon Dec 24 2018 Peter Robinson <pbrobinson@fedoraproject.org> 4.19.12-301
+- Another fix for issue affecting Raspberry Pi 3-series WiFi (rhbz 1652093)
+
+* Sat Dec 22 2018 Peter Robinson <pbrobinson@fedoraproject.org> 4.19.12-300
+- Linux v4.19.12
+
+* Thu Dec 20 2018 Jeremy Cline <jcline@redhat.com> - 4.19.11-300
+- Linux v4.19.11
+
+* Mon Dec 17 2018 Jeremy Cline <jcline@redhat.com> - 4.19.10-300
+- Linux v4.19.10
+
+* Fri Dec 14 2018 Peter Robinson <pbrobinson@fedoraproject.org> 4.19.9-301
+- Fix Raspberry Pi issues affecting WiFi (rhbz 1652093)
+
+* Thu Dec 13 2018 Jeremy Cline <jcline@redhat.com> - 4.19.9-300
+- Linux v4.19.9
+
+* Tue Dec 11 2018 Hans de Goede <hdegoede@redhat.com>
+- Really fix non functional hotkeys on Asus FX503VD (#1645070)
+
+* Mon Dec 10 2018 Jeremy Cline <jcline@redhat.com> - 4.19.8-300
+- Linux v4.19.8
+
+* Thu Dec  6 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+- Fix for ethernet LEDs on Raspberry Pi 3B+
+
+* Wed Dec 05 2018 Jeremy Cline <jcline@redhat.com> - 4.19.7-300
+- Linux v4.19.7
+
+* Wed Dec 05 2018 Jeremy Cline <jeremy@jcline.org>
+- Fix corruption bug in direct dispatch for blk-mq
+
+* Tue Dec 04 2018 Justin M. Forbes <jforbes@fedoraproject.org>
+- Fix CVE-2018-19824 (rhbz 1655816 1655817)
+
+* Mon Dec 03 2018 Jeremy Cline <jeremy@jcline.org>
+- Fix very quiet speakers on the Thinkpad T570 (rhbz 1554304)
+
+* Mon Dec  3 2018 Hans de Goede <hdegoede@redhat.com>
+- Fix non functional hotkeys on Asus FX503VD (#1645070)
+
+* Sun Dec 02 2018 Jeremy Cline <jcline@redhat.com> - 4.19.6-300
+- Linux v4.19.6
+
+* Thu Nov 29 2018 Jeremy Cline <jeremy@jcline.org>
+- Fix a problem with some rtl8168 chips (rhbz 1650984)
+- Fix slowdowns and crashes for AMD GPUs in pre-PCIe-v3 slots
+
+* Tue Nov 27 2018 Jeremy Cline <jcline@redhat.com> - 4.19.5-300
+- Linux v4.19.5
+- Fix CVE-2018-16862 (rhbz 1649017 1653122)
+- Fix CVE-2018-19407 (rhbz 1652656 1652658)
+
+* Mon Nov 26 2018 Jeremy Cline <jeremy@jcline.org>
+- Fixes a null pointer dereference with Nvidia and vmwgfx drivers (rhbz 1650224)
+
+* Fri Nov 23 2018 Peter Robinson <pbrobinson@fedoraproject.org> - 4.19.4-300
+- Linux v4.19.4
+
+* Thu Nov 22 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+- Fixes for Rockchips 3399 devices
+
+* Wed Nov 21 2018 Jeremy Cline <jcline@redhat.com> - 4.19.3-300
+- Linux v4.19.3
+
+* Tue Nov 20 2018 Hans de Goede <hdegoede@redhat.com>
+- Turn on CONFIG_PINCTRL_GEMINILAKE on x86_64 (rhbz#1639155)
+- Add a patch fixing touchscreens on HP AMD based laptops (rhbz#1644013)
+- Add a patch fixing KIOX010A accelerometers (rhbz#1526312)
+
+* Sat Nov 17 2018 Peter Robinson <pbrobinson@fedoraproject.org> 4.19.2-301
+- Fix WiFi on Raspberry Pi 3 on aarch64 (rhbz 1649344)
+- Fixes for Raspberry Pi hwmon driver and firmware interface
+
+* Fri Nov 16 2018 Hans de Goede <hdegoede@redhat.com>
+- Add patches from 4.20 fixing black screen on CHT devices with i915.fastboot=1
+
+* Thu Nov 15 2018 Hans de Goede <hdegoede@redhat.com>
+- Add patch fixing touchpads on some Apollo Lake devices not working (#1526312)
+
+* Wed Nov 14 2018 Jeremy Cline <jcline@redhat.com> - 4.19.2-300
+- Linux v4.19.2
+- Fix CVE-2018-18710 (rhbz 1645140 1648485)
+
+* Mon Nov 12 2018 Laura Abbott <labbott@redhat.com> - 4.18.18-300
+- Linux v4.18.18
+
+* Mon Nov 05 2018 Laura Abbott <labbott@redhat.com> - 4.18.17-300
+- Linux v4.18.17
+
+* Tue Oct 23 2018 Laura Abbott <labbott@redhat.com>
+- Add i915 eDP fixes
+
+* Sat Oct 20 2018 Peter Robinson <pbrobinson@fedoraproject.org> 4.18.16-300
+- Linux v4.18.16
+- Fix network on some i.MX6 devices (rhbz 1628209)
+
+* Thu Oct 18 2018 Justin M. Forbes <jforbes@fedoraproject.org> - 4.18.15-300
+- Linux v4.18.15
+
+* Thu Oct 18 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+- Add patch to fix mSD on 96boards Hikey
+
+* Tue Oct 16 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+- Fixes to Rock960 series of devices, improves stability considerably
+- Raspberry Pi graphics fix
+
+* Mon Oct 15 2018 Justin M. Forbes <jforbes@fedoraproject.org> - 4.18.14-300
+- Linux v4.18.14
+
+* Fri Oct 12 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+- Rebase device specific NVRAM files on brcm WiFi devices to latest
+
+* Fri Oct 12 2018 Jeremy Cline <jeremy@jcline.org>
+- Fix the microphone on Lenovo G50-30s (rhbz 1249364)
+
+* Wed Oct 10 2018 Laura Abbott <labbott@redhat.com> - 4.18.13-300
+- Linux v4.18.13
+
+* Mon Oct 08 2018 Justin M. Forbes <jforbes@fedoraproject.org>
+- Revert drm/amd/pp: Send khz clock values to DC for smu7/8 (rhbz 1636249)
+
+* Thu Oct 04 2018 Laura Abbott <labbott@redhat.com> - 4.18.12-300
+- Linux v4.18.12
+
+* Wed Oct  3 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+- Fixes for Ampere platforms
+
+* Wed Oct 03 2018 Justin M. Forbes <jforbes@fedoraproject.org>
+- Fix arm64 kvm priv escalation (rhbz 1635475 1635476)
+
+* Mon Oct 01 2018 Laura Abbott <labbott@redhat.com>
+- Disable CONFIG_CRYPTO_DEV_SP_PSP (rhbz 1608242)
+
+* Mon Oct  1 2018 Laura Abbott <labbott@redhat.com>
+- Fix for Intel Sensor Hub (rhbz 1634250)
+
+* Mon Oct  1 2018 Peter Robinson <pbrobinson@fedoraproject.org> 4.18.11-301
 - Support loading device specific NVRAM files on brcm WiFi devices
 
-* Fri Sep 28 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc5.git3.1
-- Linux v4.19-rc5-159-gad0371482b1e
+* Sun Sep 30 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+- Fixes for AllWinner A64 NICs
+
+* Sun Sep 30 2018 Laura Abbott <labbott@redhat.com> - 4.18.11-300
+- Linux v4.18.11
 
 * Wed Sep 26 2018 Peter Robinson <pbrobinson@fedoraproject.org>
 - Add thermal trip to bcm283x (Raspberry Pi) cpufreq
 - Add initial RockPro64 DT support
+- Add Pine64-LTS support and some other AllWinner-A64 fixes
 
-* Wed Sep 26 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc5.git2.1
-- Linux v4.19-rc5-143-gc307aaf3eb47
+* Wed Sep 26 2018 Laura Abbott <labbott@redhat.com> - 4.18.10-300
+- Linux v4.18.10
 
-* Tue Sep 25 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc5.git1.1
-- Linux v4.19-rc5-99-g8c0f9f5b309d
-- Re-enable debugging options.
+* Wed Sep 26 2018 Laura Abbott <labbott@redhat.com>
+- Fix powerpc IPv6 (rhbz 1628394)
 
-* Mon Sep 24 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc5.git0.1
-- Linux v4.19-rc5
+* Mon Sep 24 2018 Justin M. Forbes <jforbes@fedoraproject.org>
+- Fix CVE-2018-14633 (rhbz 1626035 1632185)
 
-* Mon Sep 24 2018 Jeremy Cline <jcline@redhat.com>
-- Disable debugging options.
+* Thu Sep 20 2018 Laura Abbott <labbott@redhat.com> - 4.18.9-300
+- Linux v4.18.9
+- Fixes CVE-2018-17182 (rhbz 1631205 1631206)
 
-* Fri Sep 21 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc4.git4.1
-- Linux v4.19-rc4-176-g211b100a5ced
+* Sun Sep 16 2018 Laura Abbott <labbott@redhat.com> - 4.18.8-300
+- Linux v4.18.8
 
-* Thu Sep 20 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc4.git3.1
-- Linux v4.19-rc4-137-gae596de1a0c8
+* Fri Sep 14 2018 Justin M. Forbes <jforbes@fedoraproject.org>
+- Additional Fixes for CVE-2018-5391 (rhbz 1616059)
 
-* Wed Sep 19 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc4.git2.1
-- Linux v4.19-rc4-86-g4ca719a338d5
+* Thu Sep 13 2018 Laura Abbott <labbott@redhat.com>
+- Use the CPU RNG for entropy (rhbz 1572944)
 
-* Tue Sep 18 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc4.git1.1
-- Linux v4.19-rc4-78-g5211da9ca526
-- Enable debugging options.
-
-* Mon Sep 17 2018 Jeremy Cline <jeremy@jcline.org> - 4.19.0-0.rc4.git0.1
-- Linux v4.19-rc4
-
-* Mon Sep 17 2018 Jeremy Cline <jcline@redhat.com>
-- Stop including the i686-PAE config in the sources
-- Disable debugging options.
-
-* Fri Sep 14 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc3.git3.1
-- Linux v4.19-rc3-247-gf3c0b8ce4840
-
-* Thu Sep 13 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc3.git2.1
-- Linux v4.19-rc3-130-g54eda9df17f3
+* Thu Sep 13 2018 Laura Abbott <labbott@redhat.com>
+- HID fixes (rhbz 1627963 1628715)
 
 * Thu Sep 13 2018 Hans de Goede <hdegoede@redhat.com>
 - Add patch silencing "EFI stub: UEFI Secure Boot is enabled." at boot
 
-* Wed Sep 12 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc3.git1.1
-- Linux v4.19-rc3-21-g5e335542de83
-- Re-enable debugging options.
+* Mon Sep 10 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+- Add 96boards rk3399 Ficus and Rock960 support
 
-* Mon Sep 10 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc3.git0.1
-- Linux v4.19-rc3
+* Mon Sep 10 2018 Laura Abbott <labbott@redhat.com> - 4.18.7-300
+- Linux v4.18.7
 
-* Mon Sep 10 2018 Jeremy Cline <jcline@redhat.com>
-- Disable debugging options.
+* Wed Sep 05 2018 Laura Abbott <labbott@redhat.com> - 4.18.6-300
+- Linux v4.18.6
 
-* Fri Sep 07 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc2.git3.1
-- Linux v4.19-rc2-205-ga49a9dcce802
+* Fri Aug 24 2018 Laura Abbott <labbott@redhat.com> - 4.18.5-300
+- Linux v4.18.5
 
-* Thu Sep 06 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc2.git2.1
-- Linux v4.19-rc2-163-gb36fdc6853a3
+* Wed Aug 22 2018 Laura Abbott <labbott@redhat.com> - 4.18.4-300
+- Linux v4.18.4
 
-* Wed Sep 05 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc2.git1.1
-- Linux v4.19-rc2-107-g28619527b8a7
-- Re-enable debugging options
+* Wed Aug 22 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+- Re-add mvebu a3700 ATF memory exclusion
+- Upstream fix for dwc2 on some ARM platforms
 
-* Mon Sep  3 2018 Peter Robinson <pbrobinson@fedoraproject.org>
-- Enable bcm283x VCHIQ, camera and analog audio drivers
-- ARM config updates for 4.19
+* Mon Aug 20 2018 Laura Abbott <labbott@redhat.com> - 4.18.3-300
+- Linux v4.18.3
 
-* Mon Sep 03 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc2.git0.1
-- Linux v4.19-rc2
+* Mon Aug 20 2018 Justin M. Forbes <jforbes@fedoraproject.org>
+- Fix CVE-2018-15471 (rhbz 1610555 1618414)
 
-* Mon Sep 03 2018 Jeremy Cline <jcline@redhat.com>
-- Disable debugging options.
+* Fri Aug 17 2018 Peter Robinson <pbrobinson@fedoraproject.org>
+- Add fix and re-enable BPF JIT on ARMv7
 
-* Fri Aug 31 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc1.git4.1
-- Linux v4.19-rc1-195-g4658aff6eeaa
-
-* Thu Aug 30 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc1.git3.1
-- Linux v4.19-rc1-124-g58c3f14f86c9
-
-* Wed Aug 29 2018 Jeremy Cline <jeremy@jcline.org>
-- Enable the AFS module (rhbz 1616016)
-
-* Wed Aug 29 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc1.git2.1
-- Linux v4.19-rc1-95-g3f16503b7d22
-
-* Tue Aug 28 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc1.git1.1
-- Linux v4.19-rc1-88-g050cdc6c9501
-- Re-enable debugging options
-
-* Mon Aug 27 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc1.git0.1
-- Linux v4.19-rc1
-
-* Mon Aug 27 2018 Jeremy Cline <jcline@redhat.com>
-- Disable debugging options.
-
-* Sat Aug 25 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git12.1
-- Linux v4.18-12872-g051935978432
-
-* Fri Aug 24 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git11.1
-- Linux v4.18-12721-g33e17876ea4e
-
-* Thu Aug 23 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git10.1
-- Linux v4.18-11682-g815f0ddb346c
-
-* Wed Aug 22 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git9.1
-- Linux v4.18-11219-gad1d69735878
-
-* Tue Aug 21 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git8.1
-- Linux v4.18-10986-g778a33959a8a
-
-* Mon Aug 20 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git7.1
-- Linux v4.18-10721-g2ad0d5269970
-
-* Sun Aug 19 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git6.1
-- Linux v4.18-10568-g08b5fa819970
-
-* Sat Aug 18 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git5.1
-- Linux v4.18-8895-g1f7a4c73a739
-
-* Fri Aug 17 2018 Laura Abbott <labbott@redhat.com>
-- Enable CONFIG_AF_KCM (rhbz 1613819)
-
-* Fri Aug 17 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git4.1
-- Linux v4.18-8108-g5c60a7389d79
-- Re-enable AEGIS and MORUS ciphers (rhbz 1610180)
-
-* Thu Aug 16 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git3.1
-- Linux v4.18-7873-gf91e654474d4
+* Thu Aug 16 2018 Laura Abbott <labbott@redhat.com> - 4.18.1-300
+- Linux v4.18.1
 
 * Wed Aug 15 2018 Peter Robinson <pbrobinson@fedoraproject.org>
 - Drop PPC64 (Big Endian) configs
-
-* Wed Aug 15 2018 Laura Abbott <labbott@redhat.com> - 4.19.0-0.rc0.git2.1
-- Linux v4.18-2978-g1eb46908b35d
-
-* Tue Aug 14 2018 Jeremy Cline <jcline@redhat.com> - 4.19.0-0.rc0.git1.1
-- Reenable debugging options.
-- Linux v4.18-1283-g10f3e23f07cb
 
 * Mon Aug 13 2018 Laura Abbott <labbott@redhat.com> - 4.18.0-1
 - Linux v4.18
