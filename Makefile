@@ -7,7 +7,7 @@ SHA1SUM	= sha1sum
 SED	= sed
 
 # TD 21.03.2014: Using "--with baseonly" to avoid building all the special variants.
-RPM_ARCH_BUILDOPT   = --with baseonly --without tools --without debug --without debuginfo
+RPM_ARCH_BUILDOPT   = --with headers --with baseonly --without tools --without debug --without debuginfo
 RPM_NOARCH_BUILDOPT = --without tools --without debug --without debuginfo
 # this is passed on the command line as the full path to <build>/SPECS/kernel.spec
 
