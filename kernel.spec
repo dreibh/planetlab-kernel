@@ -143,6 +143,7 @@ Summary: The Linux kernel
 # %define with_headers 0
 # %define with_cross_headers 0
 # %endif
+%define with_headers 1
 # ###########################
 
 %if %{with_verbose}
