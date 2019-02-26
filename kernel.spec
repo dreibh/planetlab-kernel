@@ -17,8 +17,6 @@ Summary: The Linux kernel
 %define nopatches 1
 # !!! NOTE: Do not complain about new options!
 %define listnewconfig_fail 0
-%define build_cflags ""
-%define build_ldflags ""
 # ###### NorNet Kernel ######
 
 
@@ -139,10 +137,13 @@ Summary: The Linux kernel
 %define debugbuildsenabled 1
 
 # Kernel headers are being split out into a separate package
-%if 0%{?fedora}
-%define with_headers 0
-%define with_cross_headers 0
-%endif
+# ###### NorNet Kernel ######
+# NOTE: The following lines *must* be commented out for NorNet:
+# %if 0%{?fedora}
+# %define with_headers 0
+# %define with_cross_headers 0
+# %endif
+# ###########################
 
 %if %{with_verbose}
 %define make_opts V=1
