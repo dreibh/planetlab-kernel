@@ -1,14 +1,13 @@
 #
 CURL	?= $(shell if test -f /usr/bin/curl ; then echo "curl -H Pragma: -O -R -S --fail --show-error" ; fi)
 WGET	?= $(shell if test -f /usr/bin/wget ; then echo "wget -nd -m" ; fi)
-CLIENT	?= $(if $(WGET),$(WGET),$(if $(CURL),$(CURL)))
+CLIENT	?= $(if $(CURL),$(CURL),$(if $(WGET),$(WGET)))
 AWK	= awk
 SHA1SUM	= sha1sum
 SED	= sed
 
 # TD 21.03.2014: Using "--with baseonly" to avoid building all the special variants.
-RPM_ARCH_BUILDOPT   = --with headers --with baseonly --without tools --without debug --without debuginfo
-RPM_NOARCH_BUILDOPT = --without tools --without debug --without debuginfo
+RPMBUILDOPT = --with baseonly --without tools --without debug --without debuginfo --with headers
 # this is passed on the command line as the full path to <build>/SPECS/kernel.spec
 
 SPECFILE = kernel.spec
@@ -47,6 +46,9 @@ RPMDIRDEFS = \
    --define "_rpmdir $(PWD)" \
    --define "_buildshell /bin/bash"
 
+trees: sources
+	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPMBUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
+
 # use the stock source rpm, unwrap it,
 # copy the downloaded material
 # install our own specfile and patched patches
@@ -61,14 +63,10 @@ srpm:
 	 cat config-planetlab >> config-generic)
 	./rpmmacros.sh
 	export HOME=$(shell pwd) ; rpmbuild $(RPMDIRDEFS) $(RPMDEFS) --nodeps -bs $(SPECFILE)
-	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps -bp --target $(PREPARCH) $(SPECFILE)
 
 TARGET ?= $(shell uname -m)
 rpm: srpm
-	# 25.03.2014: Call rpmbuild for noarch. This generates the kernel-docs package.
-	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_NOARCH_BUILDOPT) --nodeps --target $(PREPARCH) -bb $(SPECFILE)
-	# Now, run the build for the architecture-specific packages.
-	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPM_ARCH_BUILDOPT) --nodeps --target $(TARGET) -bb $(SPECFILE)
+	rpmbuild $(RPMDIRDEFS) $(RPMDEFS) $(RPMBUILDOPT) --nodeps --target $(TARGET) -bb $(SPECFILE)
 
 distclean: whipe
 
