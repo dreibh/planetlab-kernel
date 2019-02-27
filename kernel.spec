@@ -139,10 +139,10 @@ Summary: The Linux kernel
 # Kernel headers are being split out into a separate package
 # ###### NorNet Kernel ######
 # NOTE: The following lines *must* be commented out for NorNet:
-# %if 0%{?fedora}
-# %define with_headers 0
-# %define with_cross_headers 0
-# %endif
+# if 0 {?fedora}
+# define with_headers 0
+# define with_cross_headers 0
+# endif
 # ###########################
 
 %if %{with_verbose}
