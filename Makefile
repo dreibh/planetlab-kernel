@@ -60,7 +60,7 @@ srpm:
 	(cd SOURCES; cp ../upstream-kernel/* .; \
 	 cp ../$(notdir $(SPECFILE)) . ; cp ../*.patch .; cp ../config-planetlab .; \
 	 for downloaded in $(SOURCEFILES) ; do cp ../$$downloaded . ; done ; \
-	 cat config-planetlab >> config-generic)
+	 cat config-planetlab >> kernel-local)
 	./rpmmacros.sh
 	export HOME=$(shell pwd) ; rpmbuild $(RPMDIRDEFS) $(RPMDEFS) --nodeps -bs $(SPECFILE)
 
