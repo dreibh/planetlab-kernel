@@ -66,7 +66,7 @@ Summary: The Linux kernel
 %if 0%{?released_kernel}
 
 # Do we have a -stable update to apply?
-%define stable_update 29
+%define stable_update 34
 # Set rpm version accordingly
 %if 0%{?stable_update}
 %define stablerev %{stable_update}
@@ -512,7 +512,7 @@ Source5000: patch-4.%{base_sublevel}-git%{gitrev}.xz
 
 # ###### NorNet Kernel ######
 # NOTE: Still needs ApplyPatch call later!
-Source5008: 0001-MPTCP-trunk-with-socketoptions-against-v4.19.29.patch
+Source5008: 0001-MPTCP-trunk-with-socketoptions-against-v4.19.34.patch
 # ###### NorNet Kernel ######
 
 ## compile fixes
@@ -1111,7 +1111,7 @@ git commit -a -m "Stable update"
 
 
 # ###### NorNet Kernel ######
-ApplyPatch 0001-MPTCP-trunk-with-socketoptions-against-v4.19.29.patch
+ApplyPatch 0001-MPTCP-trunk-with-socketoptions-against-v4.19.34.patch
 # ###### NorNet Kernel ######
 
 
