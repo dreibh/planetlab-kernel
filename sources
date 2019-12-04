@@ -1,9 +1,3 @@
-<<<<<<< HEAD
 0c68f5655528aed4f99dae71a5b259edc93239fa899e2df79c055275c21749a1  https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/linux-4.19.tar.xz
-f42df8811951bfe8db9dd5c1b213c9d7c4dfc7d730f5e312499289bc51e49a80  https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/patch-4.19.74.xz
+e6137c451daeda15e03207b833f3322faf893cad580b066ab8bd15855190fd9d  https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/patch-4.19.86.xz
 bafecaabcfdb9b0fa02e5871ce5addaa46f5bf97051d0bdb146a8389a259ce75  https://src.fedoraproject.org/repo/pkgs/kernel/perf-man-4.14.tar.gz/sha512/76a9d8adc284cdffd4b3fbb060e7f9a14109267707ce1d03f4c3239cd70d8d164f697da3a0f90a363fbcac42a61d3c378afbcc2a86f112c501b9cb5ce74ef9f8/perf-man-4.14.tar.gz
-=======
-caf51f085aac1e1cea4d00dbbf3093ead07b551fc07b31b2a989c05f8ea72d9f  https://www.kernel.org/pub/linux/kernel/v4.x/linux-4.1.tar.xz
-398c201891d4f7942458caab8c8af5d058c62e6a8f6058b06363fad462e83154  https://www.kernel.org/pub/linux/kernel/v4.x/patch-4.1.39.xz
-0d8400ee3bb14e847a99c89768015b7c3067f0991f95eda0f1b81658e0309bd0  https://src.fedoraproject.org/lookaside/extras/kernel/perf-man-4.1.tar.gz/84e34c2f58901edcc5c840fe9893c02e/perf-man-4.1.tar.gz
->>>>>>> master
