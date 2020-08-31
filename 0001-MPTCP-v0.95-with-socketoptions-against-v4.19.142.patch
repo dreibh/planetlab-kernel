@@ -3262,7 +3262,7 @@ index f66b2e6d97a7..e7b41730fc30 100644
  	ireq->rcv_wscale  = rcv_wscale;
  	ireq->ecn_ok = cookie_ecn_ok(&tcp_opt, sock_net(sk), &rt->dst);
 diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
-index 616ff2970f4f..389b032d30f6 100644
+index 616ff2970f4f..26c6da541fa5 100644
 --- a/net/ipv4/tcp.c
 +++ b/net/ipv4/tcp.c
 @@ -274,6 +274,7 @@
@@ -3752,7 +3752,7 @@ index 616ff2970f4f..389b032d30f6 100644
  	case TCP_MD5SIG:
  	case TCP_MD5SIG_EXT:
 -		err = tp->af_specific->md5_parse(sk, optname, optval, optlen);
-+		if ((1 << sk->sk_state) & (TCPF_CLOSE | TCPF_LISTEN) && !sock_flag(sk, SOCK_MPTCP))
++		if (!sock_flag(sk, SOCK_MPTCP))
 +			err = tp->af_specific->md5_parse(sk, optname, optval, optlen);
 +		else
 +			err = -EINVAL;
@@ -8838,10 +8838,10 @@ index 000000000000..40905a0d1fe5
 +MODULE_VERSION("0.95");
 diff --git a/net/mptcp/mptcp_cmtrpv2.c b/net/mptcp/mptcp_cmtrpv2.c
 new file mode 100644
-index 000000000000..f462ce99fc1f
+index 000000000000..30d4ba1f86ca
 --- /dev/null
 +++ b/net/mptcp/mptcp_cmtrpv2.c
-@@ -0,0 +1,250 @@
+@@ -0,0 +1,256 @@
 +/*
 + *	MPTCP implementation - Concurrent Multipath Transfer / Resource Pooling version 2 (CMT/RPv2)
 + *
@@ -8965,6 +8965,10 @@ index 000000000000..f462ce99fc1f
 +	return new_ssthresh;
 +}
 +
++static void mptcp_cmtrpv2_init(struct sock *sk)
++{
++}
++
 +static void mptcp_cmtrpv2_cwnd_event(struct sock *sk, enum tcp_ca_event event)
 +{
 +	struct tcp_sock *tp = tcp_sk(sk);
@@ -9066,8 +9070,10 @@ index 000000000000..f462ce99fc1f
 +}
 +
 +static struct tcp_congestion_ops mptcp_cmtrpv2 = {
++	.init		= mptcp_cmtrpv2_init,
 +	.ssthresh	  = mptcp_cmtrpv2_ssthresh,
 +	.cong_avoid	  = mptcp_cmtrpv2_cong_avoid,
++	.undo_cwnd	= tcp_reno_undo_cwnd,
 +	.cwnd_event   = mptcp_cmtrpv2_cwnd_event,
 +	.set_state	  = mptcp_cmtrpv2_set_state,
 +	.owner		  = THIS_MODULE,
