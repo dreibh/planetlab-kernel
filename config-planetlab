@@ -23,7 +23,12 @@
 # -- CONFIG_CC_STACKPROTECTOR_STRONG=
 # -- CONFIG_CC_STACKPROTECTOR_REGULAR=y
 
+# Fix for -Wframe-larger-than error:
 CONFIG_FRAME_WARN=2048
+
+# Fix for "No rule to make target 'debian/canonical-certs.pem', needed by 'certs/x509_certificate_list'":
+CONFIG_SYSTEM_TRUSTED_KEYS=""
+
 
 # ====== MPTCP ============================================
 CONFIG_TCP_CONG_LIA=m
