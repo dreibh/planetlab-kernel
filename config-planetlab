@@ -13,6 +13,7 @@ CONFIG_FRAME_WARN=2048
 
 # Ubuntu: No rule to make target 'debian/canonical-certs.pem', needed by 'certs/x509_certificate_list'.
 CONFIG_SYSTEM_TRUSTED_KEYS=""
+CONFIG_SYSTEM_REVOCATION_KEYS=""
 
 # ====== MPTCP ============================================
 CONFIG_TCP_CONG_LIA=m
